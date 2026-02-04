@@ -4,6 +4,6 @@ export interface Service {
   price: number;
   purchases: number;
   duration: string;
-  approvalStatus: 'Approved' | 'Under Review' | 'Rejected';
+  approvalStatus: 'Approved' | 'Under-Review' | 'Rejected';
   publishStatus: 'Published' | 'Not Published';
 }

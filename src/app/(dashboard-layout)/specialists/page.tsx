@@ -1,32 +1,37 @@
 'use client';
+import React from 'react';
+import { Popover } from '@mui/material';
 
-import { useState } from 'react';
+import Header from '@/components/layout/Header';
+import Button from '@/components/ui/Button';
+import Chip from '@/components/ui/Chip';
+import TextField from '@/components/ui/TextField';
+import type { Service } from '@/types/service';
 import {
+  AddCircleOutline,
+  ChevronLeft,
+  ChevronRight,
+  FileDownloadOutlined,
+  MoreVert,
+} from '@mui/icons-material';
+import {
+  Checkbox,
+  Pagination,
+  Paper,
+  Tab,
   Table,
   TableBody,
   TableCell,
   TableContainer,
   TableHead,
   TableRow,
-  Paper,
-  Checkbox,
-  Pagination,
   Tabs,
-  Tab,
-  InputAdornment,
 } from '@mui/material';
-import {
-  AddCircleOutline,
-  FileDownloadOutlined,
-  SearchOutlined,
-  ChevronLeft,
-  ChevronRight,
-} from '@mui/icons-material';
-import Button from '@/components/ui/Button';
-import TextField from '@/components/ui/TextField';
-import Chip from '@/components/ui/Chip';
-import type { Service } from '@/types/service';
-import Header from '@/components/layout/Header';
+import { useState } from 'react';
+
+import pencilPlusIcon from '@/assets/icons/pencil_plus.svg';
+import deleteIcon from '@/assets/icons/delete.svg';
+import Image from 'next/image';
 
 // Mock data
 const mockServices: Service[] = [
@@ -45,7 +50,7 @@ const mockServices: Service[] = [
     price: 2000,
     purchases: 0,
     duration: '1 Day',
-    approvalStatus: 'Under Review',
+    approvalStatus: 'Under-Review',
     publishStatus: 'Published',
   },
   {
@@ -63,7 +68,7 @@ const mockServices: Service[] = [
     price: 2000,
     purchases: 0,
     duration: '7 Days',
-    approvalStatus: 'Under Review',
+    approvalStatus: 'Under-Review',
     publishStatus: 'Published',
   },
   {
@@ -91,6 +96,16 @@ export default function SpecialistsPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedServices, setSelectedServices] = useState<string[]>([]);
   const [page, setPage] = useState(1);
+  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const [menuServiceId, setMenuServiceId] = useState<string | null>(null);
+  const handleMenuOpen = (event: React.MouseEvent<HTMLElement>, id: string) => {
+    setAnchorEl(event.currentTarget);
+    setMenuServiceId(id);
+  };
+  const handleMenuClose = () => {
+    setAnchorEl(null);
+    setMenuServiceId(null);
+  };
 
   const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
     setSelectedTab(newValue);
@@ -114,7 +129,7 @@ export default function SpecialistsPage() {
     switch (status) {
       case 'Approved':
         return 'success';
-      case 'Under Review':
+      case 'Under-Review':
         return 'warning';
       case 'Rejected':
         return 'error';
@@ -128,7 +143,7 @@ export default function SpecialistsPage() {
   };
 
   return (
-    <div className="p-6 bg-gray-50 min-h-screen">
+    <div className="p-6 bg-gray-50 min-h-screen ">
       <Header />
       {/* Breadcrumb */}
       <div className="my-6">
@@ -152,7 +167,7 @@ export default function SpecialistsPage() {
         </div>
 
         {/* Tabs */}
-        <div className="mb-6">
+        <div className="mb-6 font-proxima-nova">
           <Tabs
             value={selectedTab}
             onChange={handleTabChange}
@@ -186,14 +201,7 @@ export default function SpecialistsPage() {
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             size="small"
-            className="flex-1 max-w-md bg-white"
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
-                  <SearchOutlined className="text-gray-400" />
-                </InputAdornment>
-              ),
-            }}
+            className="bg-[#f1f1f1] placeholder:font-semibold"
           />
           <div className="flex gap-3">
             <Button
@@ -208,7 +216,12 @@ export default function SpecialistsPage() {
             <Button
               variant="outlined"
               startIcon={<FileDownloadOutlined />}
-              className="border-gray-300 text-gray-700 normal-case"
+              // className="border-gray-300 text-gray-700 normal-case"
+              className="font-proxima-nova"
+              sx={{
+                bgcolor: 'secondary.main',
+                color: 'white',
+              }}
             >
               Export
             </Button>
@@ -219,7 +232,7 @@ export default function SpecialistsPage() {
         <TableContainer component={Paper} className="shadow-sm">
           <Table>
             <TableHead>
-              <TableRow className="bg-gray-50">
+              <TableRow className="">
                 <TableCell padding="checkbox">
                   <Checkbox
                     checked={selectedServices.length === mockServices.length}
@@ -241,25 +254,74 @@ export default function SpecialistsPage() {
                     }}
                   />
                 </TableCell>
-                <TableCell className="font-semibold text-gray-700 uppercase text-xs">
+                <TableCell
+                  sx={{
+                    fontWeight: 700,
+                    color: '#888888',
+                    textTransform: 'uppercase',
+                    fontSize: '0.75rem',
+                  }}
+                >
                   Service
                 </TableCell>
-                <TableCell className="font-semibold text-gray-700 uppercase text-xs">
+                <TableCell
+                  sx={{
+                    fontWeight: 700,
+                    color: '#888888',
+                    textTransform: 'uppercase',
+                    fontSize: '0.75rem',
+                  }}
+                >
                   Price
                 </TableCell>
-                <TableCell className="font-semibold text-gray-700 uppercase text-xs">
+                <TableCell
+                  sx={{
+                    fontWeight: 700,
+                    color: '#888888',
+                    textTransform: 'uppercase',
+                    fontSize: '0.75rem',
+                  }}
+                >
                   Purchases
                 </TableCell>
-                <TableCell className="font-semibold text-gray-700 uppercase text-xs">
+                <TableCell
+                  sx={{
+                    fontWeight: 700,
+                    color: '#888888',
+                    textTransform: 'uppercase',
+                    fontSize: '0.75rem',
+                  }}
+                >
                   Duration
                 </TableCell>
-                <TableCell className="font-semibold text-gray-700 uppercase text-xs">
+                <TableCell
+                  sx={{
+                    fontWeight: 700,
+                    color: '#888888',
+                    textTransform: 'uppercase',
+                    fontSize: '0.75rem',
+                  }}
+                >
                   Approval Status
                 </TableCell>
-                <TableCell className="font-semibold text-gray-700 uppercase text-xs">
+                <TableCell
+                  sx={{
+                    fontWeight: 700,
+                    color: '#888888',
+                    textTransform: 'uppercase',
+                    fontSize: '0.75rem',
+                  }}
+                >
                   Publish Status
                 </TableCell>
-                <TableCell className="font-semibold text-gray-700 uppercase text-xs">
+                <TableCell
+                  sx={{
+                    fontWeight: 700,
+                    color: '#888888',
+                    textTransform: 'uppercase',
+                    fontSize: '0.75rem',
+                  }}
+                >
                   Action
                 </TableCell>
               </TableRow>
@@ -294,27 +356,119 @@ export default function SpecialistsPage() {
                     {service.duration}
                   </TableCell>
                   <TableCell>
-                    <Chip
-                      label={service.approvalStatus}
-                      status={getApprovalStatusColor(service.approvalStatus)}
+                    <Button
+                      variant="contained"
                       size="small"
-                    />
-                  </TableCell>
-                  <TableCell>
-                    <Chip
-                      label={service.publishStatus}
-                      status={getPublishStatusColor(service.publishStatus)}
-                      size="small"
-                    />
+                      className="w-32"
+                      sx={{
+                        bgcolor:
+                          service.approvalStatus === 'Approved'
+                            ? '#a3e9c1'
+                            : service.approvalStatus === 'Under-Review'
+                              ? '#c0f5f0'
+                              : '#e69a9b',
+                        color:
+                          service.approvalStatus === 'Approved'
+                            ? '#18c964'
+                            : service.approvalStatus === 'Under-Review'
+                              ? '#06B6D4'
+                              : '#DC2626',
+                        '&:hover': {
+                          bgcolor:
+                            service.approvalStatus === 'Approved'
+                              ? '#A3E6C8'
+                              : service.approvalStatus === 'Under-Review'
+                                ? '#A3E6E6'
+                                : '#E8A8A8',
+                        },
+                        textTransform: 'none',
+                        fontWeight: 600,
+                      }}
+                    >
+                      {service.approvalStatus}
+                    </Button>
                   </TableCell>
                   <TableCell>
                     <Button
-                      variant="text"
+                      variant="contained"
                       size="small"
-                      className="text-blue-600 hover:text-blue-700 normal-case"
+                      sx={{
+                        bgcolor:
+                          service.publishStatus === 'Published'
+                            ? '#18c964'
+                            : '#c00306',
+                        color: 'white',
+                        '&:hover': {
+                          bgcolor:
+                            service.publishStatus === 'Published'
+                              ? '#059669'
+                              : '#B91C1C',
+                        },
+                        textTransform: 'none',
+                        fontWeight: 600,
+                      }}
                     >
-                      View
+                      {service.publishStatus}
                     </Button>
+                  </TableCell>
+                  <TableCell>
+                    <button
+                      className="px-2 cursor-pointer"
+                      onClick={(e) => handleMenuOpen(e, service.id)}
+                    >
+                      <MoreVert />
+                    </button>
+                    <Popover
+                      open={Boolean(anchorEl) && menuServiceId === service.id}
+                      anchorEl={anchorEl}
+                      onClose={handleMenuClose}
+                      anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+                      transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+                      PaperProps={{
+                        style: {
+                          minWidth: 128,
+                          boxShadow: '0 2px 8px rgba(0,0,0,0.12)',
+                        },
+                      }}
+                    >
+                      <div className="py-2">
+                        <button
+                          className="flex items-center w-full px-4 py-2 text-sm hover:bg-gray-100"
+                          onClick={() => {
+                            // handle edit
+                            handleMenuClose();
+                          }}
+                        >
+                          <span className="mr-2">
+                            <Image
+                              src={pencilPlusIcon}
+                              alt="Edit"
+                              width={16}
+                              height={16}
+                            />
+                          </span>{' '}
+                          Edit
+                        </button>
+                        <hr className="my-1 border-gray-200" />
+                        <button
+                          className="flex items-center w-full px-4 py-2 text-sm text-red-600 hover:bg-gray-100"
+                          onClick={() => {
+                            // handle delete
+                            handleMenuClose();
+                          }}
+                        >
+                          <span className="mr-2">
+                            <Image
+                              src={deleteIcon}
+                              alt="Delete"
+                              width={16}
+                              height={16}
+                            />
+                          </span>{' '}
+                          Delete
+                        </button>
+                      </div>
+                    </Popover>
                   </TableCell>
                 </TableRow>
               ))}

@@ -8,7 +8,7 @@ export const theme = createTheme({
       dark: '#001a42',
     },
     secondary: {
-      main: '#666666',
+      main: '#071331',
     },
     success: {
       main: '#10B981',
@@ -21,6 +21,6 @@ export const theme = createTheme({
     },
   },
   typography: {
-    fontFamily: '"Proxima Nova", "Red Hat Display", sans-serif',
+    fontFamily: 'var(--font-proxima-nova), "Proxima Nova", sans-serif',
   },
 });
