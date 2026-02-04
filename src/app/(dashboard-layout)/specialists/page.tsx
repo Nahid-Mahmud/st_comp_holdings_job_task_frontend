@@ -1,37 +1,20 @@
 'use client';
 import React from 'react';
-import { Popover } from '@mui/material';
 
 import Header from '@/components/layout/Header';
 import Button from '@/components/ui/Button';
 import Chip from '@/components/ui/Chip';
 import TextField from '@/components/ui/TextField';
+import ServiceTable from '@/components/ServiceTable';
 import type { Service } from '@/types/service';
 import {
   AddCircleOutline,
   ChevronLeft,
   ChevronRight,
   FileDownloadOutlined,
-  MoreVert,
 } from '@mui/icons-material';
-import {
-  Checkbox,
-  Pagination,
-  Paper,
-  Tab,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Tabs,
-} from '@mui/material';
+import { Pagination, Tab, Tabs } from '@mui/material';
 import { useState } from 'react';
-
-import pencilPlusIcon from '@/assets/icons/pencil_plus.svg';
-import deleteIcon from '@/assets/icons/delete.svg';
-import Image from 'next/image';
 
 // Mock data
 const mockServices: Service[] = [
@@ -229,252 +212,16 @@ export default function SpecialistsPage() {
         </div>
 
         {/* Table */}
-        <TableContainer component={Paper} className="shadow-sm">
-          <Table>
-            <TableHead>
-              <TableRow className="">
-                <TableCell padding="checkbox">
-                  <Checkbox
-                    checked={selectedServices.length === mockServices.length}
-                    indeterminate={
-                      selectedServices.length > 0 &&
-                      selectedServices.length < mockServices.length
-                    }
-                    onChange={handleSelectAll}
-                    sx={{
-                      '& .MuiSvgIcon-root': {
-                        borderRadius: '4px',
-                      },
-                      '&.Mui-checked': {
-                        color: 'primary.main',
-                      },
-                      '&.MuiCheckbox-indeterminate': {
-                        color: 'primary.main',
-                      },
-                    }}
-                  />
-                </TableCell>
-                <TableCell
-                  sx={{
-                    fontWeight: 700,
-                    color: '#888888',
-                    textTransform: 'uppercase',
-                    fontSize: '0.75rem',
-                  }}
-                >
-                  Service
-                </TableCell>
-                <TableCell
-                  sx={{
-                    fontWeight: 700,
-                    color: '#888888',
-                    textTransform: 'uppercase',
-                    fontSize: '0.75rem',
-                  }}
-                >
-                  Price
-                </TableCell>
-                <TableCell
-                  sx={{
-                    fontWeight: 700,
-                    color: '#888888',
-                    textTransform: 'uppercase',
-                    fontSize: '0.75rem',
-                  }}
-                >
-                  Purchases
-                </TableCell>
-                <TableCell
-                  sx={{
-                    fontWeight: 700,
-                    color: '#888888',
-                    textTransform: 'uppercase',
-                    fontSize: '0.75rem',
-                  }}
-                >
-                  Duration
-                </TableCell>
-                <TableCell
-                  sx={{
-                    fontWeight: 700,
-                    color: '#888888',
-                    textTransform: 'uppercase',
-                    fontSize: '0.75rem',
-                  }}
-                >
-                  Approval Status
-                </TableCell>
-                <TableCell
-                  sx={{
-                    fontWeight: 700,
-                    color: '#888888',
-                    textTransform: 'uppercase',
-                    fontSize: '0.75rem',
-                  }}
-                >
-                  Publish Status
-                </TableCell>
-                <TableCell
-                  sx={{
-                    fontWeight: 700,
-                    color: '#888888',
-                    textTransform: 'uppercase',
-                    fontSize: '0.75rem',
-                  }}
-                >
-                  Action
-                </TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {mockServices.map((service) => (
-                <TableRow key={service.id} hover className="hover:bg-gray-50">
-                  <TableCell padding="checkbox">
-                    <Checkbox
-                      checked={selectedServices.includes(service.id)}
-                      onChange={() => handleSelectOne(service.id)}
-                      sx={{
-                        '& .MuiSvgIcon-root': {
-                          borderRadius: '4px',
-                        },
-                        '&.Mui-checked': {
-                          color: 'primary.main',
-                        },
-                      }}
-                    />
-                  </TableCell>
-                  <TableCell className="text-sm text-gray-900">
-                    {service.name}
-                  </TableCell>
-                  <TableCell className="text-sm text-gray-900">
-                    RM {service.price.toLocaleString()}
-                  </TableCell>
-                  <TableCell className="text-sm text-gray-900">
-                    {service.purchases}
-                  </TableCell>
-                  <TableCell className="text-sm text-gray-900">
-                    {service.duration}
-                  </TableCell>
-                  <TableCell>
-                    <Button
-                      variant="contained"
-                      size="small"
-                      className="w-32"
-                      sx={{
-                        bgcolor:
-                          service.approvalStatus === 'Approved'
-                            ? '#a3e9c1'
-                            : service.approvalStatus === 'Under-Review'
-                              ? '#c0f5f0'
-                              : '#e69a9b',
-                        color:
-                          service.approvalStatus === 'Approved'
-                            ? '#18c964'
-                            : service.approvalStatus === 'Under-Review'
-                              ? '#06B6D4'
-                              : '#DC2626',
-                        '&:hover': {
-                          bgcolor:
-                            service.approvalStatus === 'Approved'
-                              ? '#A3E6C8'
-                              : service.approvalStatus === 'Under-Review'
-                                ? '#A3E6E6'
-                                : '#E8A8A8',
-                        },
-                        textTransform: 'none',
-                        fontWeight: 600,
-                      }}
-                    >
-                      {service.approvalStatus}
-                    </Button>
-                  </TableCell>
-                  <TableCell>
-                    <Button
-                      variant="contained"
-                      size="small"
-                      sx={{
-                        bgcolor:
-                          service.publishStatus === 'Published'
-                            ? '#18c964'
-                            : '#c00306',
-                        color: 'white',
-                        '&:hover': {
-                          bgcolor:
-                            service.publishStatus === 'Published'
-                              ? '#059669'
-                              : '#B91C1C',
-                        },
-                        textTransform: 'none',
-                        fontWeight: 600,
-                      }}
-                    >
-                      {service.publishStatus}
-                    </Button>
-                  </TableCell>
-                  <TableCell>
-                    <button
-                      className="px-2 cursor-pointer"
-                      onClick={(e) => handleMenuOpen(e, service.id)}
-                    >
-                      <MoreVert />
-                    </button>
-                    <Popover
-                      open={Boolean(anchorEl) && menuServiceId === service.id}
-                      anchorEl={anchorEl}
-                      onClose={handleMenuClose}
-                      anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-                      transformOrigin={{ vertical: 'top', horizontal: 'right' }}
-                      PaperProps={{
-                        style: {
-                          minWidth: 128,
-                          boxShadow: '0 2px 8px rgba(0,0,0,0.12)',
-                        },
-                      }}
-                    >
-                      <div className="py-2">
-                        <button
-                          className="flex items-center w-full px-4 py-2 text-sm hover:bg-gray-100"
-                          onClick={() => {
-                            // handle edit
-                            handleMenuClose();
-                          }}
-                        >
-                          <span className="mr-2">
-                            <Image
-                              src={pencilPlusIcon}
-                              alt="Edit"
-                              width={16}
-                              height={16}
-                            />
-                          </span>{' '}
-                          Edit
-                        </button>
-                        <hr className="my-1 border-gray-200" />
-                        <button
-                          className="flex items-center w-full px-4 py-2 text-sm text-red-600 hover:bg-gray-100"
-                          onClick={() => {
-                            // handle delete
-                            handleMenuClose();
-                          }}
-                        >
-                          <span className="mr-2">
-                            <Image
-                              src={deleteIcon}
-                              alt="Delete"
-                              width={16}
-                              height={16}
-                            />
-                          </span>{' '}
-                          Delete
-                        </button>
-                      </div>
-                    </Popover>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </TableContainer>
+        <ServiceTable
+          services={mockServices}
+          selectedServices={selectedServices}
+          onSelectAll={handleSelectAll}
+          onSelectOne={handleSelectOne}
+          anchorEl={anchorEl}
+          menuServiceId={menuServiceId}
+          onMenuOpen={handleMenuOpen}
+          onMenuClose={handleMenuClose}
+        />
 
         {/* Pagination */}
         <div className="mt-6 flex items-center justify-center">
@@ -483,15 +230,13 @@ export default function SpecialistsPage() {
             page={page}
             onChange={(_event, value) => setPage(value)}
             shape="rounded"
-            showFirstButton
-            showLastButton
             renderItem={(item) => (
               <div className="mx-0.5">
                 {item.type === 'previous' ? (
                   <button
                     onClick={item.onClick}
                     disabled={item.disabled}
-                    className="px-3 py-1 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
+                    className="px-3 py-1 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1 cursor-pointer"
                   >
                     <ChevronLeft fontSize="small" />
                     Previous
@@ -500,7 +245,7 @@ export default function SpecialistsPage() {
                   <button
                     onClick={item.onClick}
                     disabled={item.disabled}
-                    className="px-3 py-1 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
+                    className="px-3 py-1 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1 cursor-pointer"
                   >
                     Next
                     <ChevronRight fontSize="small" />
@@ -508,7 +253,7 @@ export default function SpecialistsPage() {
                 ) : item.type === 'page' ? (
                   <button
                     onClick={item.onClick}
-                    className={`px-3 py-1 text-sm font-medium rounded ${
+                    className={`px-3 py-1 text-sm font-medium rounded-full cursor-pointer ${
                       item.selected
                         ? 'bg-blue-900 text-white'
                         : 'text-gray-700 hover:bg-gray-100'
