@@ -15,6 +15,7 @@ import {
 } from '@mui/icons-material';
 import { Pagination, Tab, Tabs } from '@mui/material';
 import { useState } from 'react';
+import Link from 'next/link';
 
 // Mock data
 const mockServices: Service[] = [
@@ -187,15 +188,17 @@ export default function SpecialistsPage() {
             className="bg-[#f1f1f1] placeholder:font-semibold"
           />
           <div className="flex gap-3">
-            <Button
-              variant="contained"
-              startIcon={<AddCircleOutline />}
-              sx={{
-                bgcolor: 'primary.main',
-              }}
-            >
-              Create
-            </Button>
+            <Link href="/specialists/create">
+              <Button
+                variant="contained"
+                startIcon={<AddCircleOutline />}
+                sx={{
+                  bgcolor: 'primary.main',
+                }}
+              >
+                Create
+              </Button>
+            </Link>
             <Button
               variant="outlined"
               startIcon={<FileDownloadOutlined />}

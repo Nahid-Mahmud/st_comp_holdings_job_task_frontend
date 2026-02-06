@@ -6,7 +6,7 @@ export default function CommonLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen ">
       <AllServicesHeader />
       {children}
     </div>
