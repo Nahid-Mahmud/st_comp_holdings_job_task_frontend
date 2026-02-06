@@ -10,6 +10,7 @@ import IACS_Certification from '@/assets/photos/iacs.svg';
 import maicsa_Certification from '@/assets/photos/Maicsa.svg';
 import SMM_Certification from '@/assets/photos/SSM.svg';
 import Image from 'next/image';
+import photoUpload from '@/assets/photos/photo-scan 1.svg';
 
 export default function CreateSpecialistForm() {
   const [sidePanel, setSidePanel] = useState(false);
@@ -121,7 +122,11 @@ export default function CreateSpecialistForm() {
 
               {!uploadedImage ? (
                 <>
-                  <CloudUpload className="w-16 h-16 text-gray-400 mb-4" />
+                  <Image
+                    src={photoUpload}
+                    alt="Upload"
+                    className="w-16 h-16 text-gray-400 mb-4"
+                  />
                   <p className="text-gray-600 text-center text-sm leading-relaxed">
                     Upload an image for your service listing in PNG, JPG or JPEG
                     <br />
@@ -178,7 +183,11 @@ export default function CreateSpecialistForm() {
 
                 {!uploadedImage ? (
                   <>
-                    <CloudUpload className="w-16 h-16 text-gray-400 mb-4" />
+                    <Image
+                      src={photoUpload}
+                      alt="Upload"
+                      className="w-16 h-16 text-gray-400 mb-4"
+                    />
                     <p className="text-gray-600 text-center text-sm leading-relaxed">
                       Upload an image for your service listing in PNG, JPG or
                       JPEG
@@ -235,7 +244,11 @@ export default function CreateSpecialistForm() {
 
                 {!uploadedImage ? (
                   <>
-                    <CloudUpload className="w-16 h-16 text-gray-400 mb-4" />
+                    <Image
+                      src={photoUpload}
+                      alt="Upload"
+                      className="w-16 h-16 text-gray-400 mb-4"
+                    />
                     <p className="text-gray-600 text-center text-sm leading-relaxed">
                       Upload an image for your service listing in PNG, JPG or
                       JPEG
@@ -408,7 +421,7 @@ export default function CreateSpecialistForm() {
               </div>
               {/* Description Text */}
               <div className="rounded-lg ">
-                <p className="text-gray-700 text-sm leading-relaxed">
+                <p className="text-gray-700 text-sm font-semibold leading-relaxed">
                   A company secretarial service founded by Grace, who believes
                   that every company deserves clarity, confidence, and care in
                   their compliance journey. Inspired by the spirit of
@@ -425,7 +438,7 @@ export default function CreateSpecialistForm() {
 
             {/* Right Side - Certification */}
             <div className="flex-1">
-              <h4 className="text-lg font-semibold text-gray-900 mb-4">
+              <h4 className="text-3xl font-semibold text-gray-900 mb-4">
                 Certified Company Secretary
               </h4>
               <div className="flex items-center gap-4">
@@ -434,21 +447,21 @@ export default function CreateSpecialistForm() {
                   alt="IACS Certification"
                   height={300}
                   width={300}
-                  className="h-20  w-fit"
+                  className="h-16  w-fit"
                 />
                 <Image
                   src={maicsa_Certification.src}
                   alt="MAICSA Certification"
                   height={300}
                   width={300}
-                  className="h-20 w-fit"
+                  className="h-16 w-fit"
                 />
                 <Image
                   src={SMM_Certification.src}
                   alt="Certification 1"
                   height={300}
                   width={300}
-                  className="h-20 w-fit"
+                  className="h-16 w-fit"
                 />
               </div>
             </div>

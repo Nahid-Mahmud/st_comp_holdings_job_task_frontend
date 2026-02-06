@@ -15,6 +15,8 @@ import { usePathname } from 'next/navigation';
 import esignatureIcon from '../../assets/icons/esignature.svg';
 import invoiceIcon from '../../assets/icons/invoice-svgrepo-com 1.svg';
 
+import profilePhotoForCreateCompanySpecialists from '@/assets/photos/Profile_Picture.svg';
+
 interface NavItem {
   name: string;
   href: string;
@@ -78,7 +80,7 @@ export default function Sidebar() {
         <div className="flex items-center gap-3">
           <Avatar
             alt="Gwen Lam"
-            src="/avatar.jpg"
+            src={profilePhotoForCreateCompanySpecialists.src}
             sx={{ width: 40, height: 40 }}
           />
           <div>
