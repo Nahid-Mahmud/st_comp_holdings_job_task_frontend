@@ -3,15 +3,20 @@
 import EditServiceDrawer from '@/components/EditServiceDrawer';
 import Button from '@/components/ui/Button';
 import { CheckCircle, Close, CloudUpload } from '@mui/icons-material';
-import { Avatar, CircularProgress, Alert } from '@mui/material';
-import { useRef, useState, useCallback } from 'react';
+import { Avatar, CircularProgress } from '@mui/material';
+import { useRef, useState } from 'react';
 import profilePhotoForCreateCompanySpecialists from '@/assets/photos/Profile_Picture.svg';
 import IACS_Certification from '@/assets/photos/iacs.svg';
 import maicsa_Certification from '@/assets/photos/Maicsa.svg';
 import SMM_Certification from '@/assets/photos/SSM.svg';
 import Image from 'next/image';
 import photoUpload from '@/assets/photos/photo-scan 1.svg';
-import { useCreateSpecialistMutation } from '@/redux/features/specialists/specialists.api';
+import { toast } from 'sonner';
+import {
+  useCreateSpecialistMutation,
+  useUpdateSpecialistMutation,
+} from '@/redux/features/specialists/specialists.api';
+import { useRouter } from 'next/navigation';
 
 export default function CreateSpecialistForm() {
   const [sidePanel, setSidePanel] = useState(false);
@@ -50,6 +55,13 @@ export default function CreateSpecialistForm() {
   const [fileSize2, setFileSize2] = useState<number>(0);
   const [fileSize3, setFileSize3] = useState<number>(0);
   const inputRef3 = useRef<HTMLInputElement>(null);
+
+  const [serviceId, setServiceId] = useState<string>('');
+
+  const [updateSpecialistFn, { isLoading: isPublishLoading }] =
+    useUpdateSpecialistMutation();
+
+  const router = useRouter();
 
   // Helper function to format file size
   const formatFileSize = (bytes: number) => {
@@ -111,13 +123,13 @@ export default function CreateSpecialistForm() {
   const handleFiles = (file: File, order: number) => {
     // Check file type
     if (!['image/png', 'image/jpeg', 'image/jpg'].includes(file.type)) {
-      alert('Please upload a PNG, JPG, or JPEG file.');
+      toast.error('Please upload a PNG, JPG, or JPEG file.');
       return;
     }
 
     // Check file size (4MB limit)
     if (file.size > 4 * 1024 * 1024) {
-      alert('File size must be under 4MB.');
+      toast.error('File size must be under 4MB.');
       return;
     }
 
@@ -169,134 +181,56 @@ export default function CreateSpecialistForm() {
   };
 
   // Handle adding specialist from drawer
-  const handleAddSpecialist = useCallback(
-    async (
-      data: {
-        title: string;
-        description: string;
-        base_price: number;
-        duration_days: number;
-        service_offerings_master_list_ids?: string[];
-      },
-      photos: File[]
-    ) => {
-      try {
-        await createSpecialist({
-          data,
-          photos,
-        }).unwrap();
-
-        alert('Specialist created successfully!');
-        // Reset form
-        setFormData({
-          title: '',
-          description: '',
-          base_price: 0,
-          duration_days: 0,
-        });
-        setSelectedOfferings([]);
-        handleRemove(1);
-        handleRemove(2);
-        handleRemove(3);
-      } catch (err) {
-        console.error('Error creating specialist:', err);
-        throw err;
-      }
+  const handleAddSpecialist = async (
+    data: {
+      title: string;
+      description: string;
+      base_price: number;
+      duration_days: number;
+      service_offerings_master_list_ids?: string[];
     },
-    [createSpecialist]
-  );
-
-  // Handle form submission
-  const handlePublish = useCallback(async () => {
-    // Validate required fields
-    if (!formData.title || formData.title.trim() === '') {
-      alert('Please enter a service title in the Edit panel');
-      return;
-    }
-
-    if (!formData.description || formData.description.trim() === '') {
-      alert('Please enter a service description in the Edit panel');
-      return;
-    }
-
-    if (
-      formData.base_price === undefined ||
-      formData.base_price === null ||
-      Number(formData.base_price) <= 0
-    ) {
-      alert('Please enter a valid price in the Edit panel');
-      return;
-    }
-
-    if (
-      formData.duration_days === undefined ||
-      formData.duration_days === null ||
-      Number(formData.duration_days) <= 0
-    ) {
-      alert('Please enter a valid duration in the Edit panel');
-      return;
-    }
-
-    // Collect uploaded files
-    const uploadedFiles: File[] = [];
-    if (fileObj1) uploadedFiles.push(fileObj1);
-    if (fileObj2) uploadedFiles.push(fileObj2);
-    if (fileObj3) uploadedFiles.push(fileObj3);
-
-    if (uploadedFiles.length === 0) {
-      alert('Please upload at least one image');
-      return;
-    }
-
+    photos: File[]
+  ) => {
     try {
-      const submitData = {
-        title: String(formData.title),
-        description: String(formData.description),
-        base_price: Number(formData.base_price),
-        duration_days: Number(formData.duration_days),
-        is_draft: false,
-        ...(selectedOfferings.length > 0 && {
-          service_offerings_master_list_ids: selectedOfferings,
-        }),
-      };
-
-      await createSpecialist({
-        data: submitData,
-        photos: uploadedFiles,
+      const res = await createSpecialist({
+        data,
+        photos,
       }).unwrap();
 
-      alert('Specialist created successfully!');
-      // Reset form
-      setFormData({
-        title: '',
-        description: '',
-        base_price: 0,
-        duration_days: 0,
-      });
-      setSelectedOfferings([]);
-      handleRemove(1);
-      handleRemove(2);
-      handleRemove(3);
+      setServiceId(res.data.id);
+      toast.success('Specialist service created successfully!');
+      console.log(res.data.id);
     } catch (err) {
       console.error('Error creating specialist:', err);
-      alert('Failed to create specialist. Please try again.');
+      toast.error('Failed to create specialist. Please try again.');
+      throw err;
     }
-  }, [
-    formData,
-    selectedOfferings,
-    fileObj1,
-    fileObj2,
-    fileObj3,
-    createSpecialist,
-  ]);
+  };
+
+  // Handle form submission
+  const handlePublish = async () => {
+    // Validate required fields
+    try {
+      if (!serviceId) {
+        toast.error('Please create a specialist service first.');
+        return;
+      }
+      const res = await updateSpecialistFn({
+        id: serviceId,
+        data: {
+          is_draft: false,
+        },
+      }).unwrap();
+      toast.success('Specialist service published successfully!');
+      router.push('/all-services');
+    } catch (err) {
+      console.error('Error publishing specialist:', err);
+      toast.error('Failed to publish specialist. Please try again.');
+    }
+  };
 
   return (
     <div className="px-6 pt-20  mx-auto min-h-screen">
-      {!!error && (
-        <Alert severity="error" className="mb-4">
-          Failed to create specialist. Please try again.
-        </Alert>
-      )}
       {/* Main Content */}
       <div className="rounded-lg  grid grid-cols-3 gap-6">
         {/* Service Images */}
@@ -472,9 +406,9 @@ export default function CreateSpecialistForm() {
                 minWidth: '100px',
               }}
               onClick={handlePublish}
-              disabled={isLoading}
+              disabled={isPublishLoading}
             >
-              {isLoading ? (
+              {isPublishLoading ? (
                 <CircularProgress size={20} color="inherit" />
               ) : (
                 'Publish'
