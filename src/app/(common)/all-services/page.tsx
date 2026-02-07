@@ -5,6 +5,10 @@ import Select from '@mui/material/Select';
 import { SelectChangeEvent } from '@mui/material/Select';
 import { HomeRounded } from '@mui/icons-material';
 import ServiceCardItem from '@/components/all-services/ServiceCardItem';
+import { useGetAllSpecialistsQuery } from '@/redux/features/specialists/specialists.api';
+import { useMemo, useState } from 'react';
+import { Specialist } from '@/types/service';
+import CircularProgress from '@mui/material/CircularProgress';
 
 type ServiceCard = {
   id: string;
@@ -19,63 +23,71 @@ type ServiceCard = {
   };
 };
 
-const SERVICES: ServiceCard[] = [
-  {
-    id: 'service-1',
-    title: 'Register a New Company',
-    description: 'Register your company with the best Company Secretary in KL',
-    price: 'RM 1,600',
-    image:
-      'https://images.unsplash.com/photo-1520607162513-77705c0f0d4a?q=80&w=1400&auto=format&fit=crop',
-    author: {
-      name: 'Adam Low',
-      role: 'Company Secretary',
-      avatar: 'https://i.pravatar.cc/60?img=11',
-    },
-  },
-  {
-    id: 'service-2',
-    title: 'Brand Strategy Development',
-    description: 'Register your company with the best Company Secretary in KL',
-    price: 'RM 1,600',
-    image:
-      'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?q=80&w=1400&auto=format&fit=crop',
-    author: {
-      name: 'Jessica Law',
-      role: 'Company Secretary',
-      avatar: 'https://i.pravatar.cc/60?img=32',
-    },
-  },
-  {
-    id: 'service-3',
-    title: 'Strategic Digital Consulting',
-    description: 'Register your company with the best Company Secretary in KL',
-    price: 'RM 1,600',
-    image:
-      'https://images.unsplash.com/photo-1544005313-94ddf0286df2?q=80&w=1400&auto=format&fit=crop',
-    author: {
-      name: 'Stacey Lim',
-      role: 'Company Secretary',
-      avatar: 'https://i.pravatar.cc/60?img=47',
-    },
-  },
-  {
-    id: 'service-4',
-    title: 'LinkedIn Posts',
-    description: 'Register your company with the best Company Secretary in KL',
-    price: 'RM 1,600',
-    image:
-      'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?q=80&w=1400&auto=format&fit=crop',
-    author: {
-      name: 'Stacey Lim',
-      role: 'Company Secretary',
-      avatar: 'https://i.pravatar.cc/60?img=20',
-    },
-  },
-];
-
 export default function AllServicesPage() {
-  const handleFilterChange = (_event: SelectChangeEvent) => {};
+  const [priceFilter, setPriceFilter] = useState('price');
+  const [sortFilter, setSortFilter] = useState('sort');
+
+  // Fetch all specialists
+  const { data, isLoading, isError } = useGetAllSpecialistsQuery({
+    is_draft: false,
+    limit: 100,
+  });
+
+  const handlePriceFilterChange = (event: SelectChangeEvent) => {
+    setPriceFilter(event.target.value);
+  };
+
+  const handleSortFilterChange = (event: SelectChangeEvent) => {
+    setSortFilter(event.target.value);
+  };
+
+  // Transform specialists data to match ServiceCard format
+  const services: ServiceCard[] = useMemo(() => {
+    if (!data?.data) return [];
+
+    let specialists = Array.isArray(data.data)
+      ? [...data.data]
+      : [...(data.data.data || [])];
+
+    // Apply sorting
+    if (sortFilter === 'popular') {
+      specialists = specialists.sort(
+        (a, b) => Number(b.average_rating) - Number(a.average_rating)
+      );
+    } else if (sortFilter === 'new') {
+      specialists = specialists.sort(
+        (a, b) =>
+          new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+      );
+    }
+
+    // Apply price filtering
+    if (priceFilter === 'low') {
+      specialists = specialists.sort(
+        (a, b) => Number(a.final_price) - Number(b.final_price)
+      );
+    } else if (priceFilter === 'high') {
+      specialists = specialists.sort(
+        (a, b) => Number(b.final_price) - Number(a.final_price)
+      );
+    }
+
+    return specialists.map((specialist: Specialist) => ({
+      id: specialist.id,
+      title: specialist.title,
+      description: specialist.description,
+      price: `RM ${Number(specialist.final_price).toFixed(2)}`,
+      image:
+        specialist.media && specialist.media.length > 0
+          ? specialist.media[0].file_name
+          : 'https://images.unsplash.com/photo-1520607162513-77705c0f0d4a?q=80&w=1400&auto=format&fit=crop',
+      author: {
+        name: 'Specialist',
+        role: 'Service Provider',
+        avatar: 'https://i.pravatar.cc/60?img=11',
+      },
+    }));
+  }, [data, priceFilter, sortFilter]);
 
   return (
     <main className="mx-auto w-full container px-4 pb-16 pt-10">
@@ -84,23 +96,23 @@ export default function AllServicesPage() {
         <span>/</span>
         <span>Specialists</span>
         <span>/</span>
-        <span className="">Register a New Company</span>
+        <span className="">All Services</span>
       </div>
 
       <div className="mt-4">
         <h1 className="text-2xl font-semibold text-gray-900 font-red-hat-display">
-          Register a New Company
+          All Services
         </h1>
         <p className="mt-1 text-sm text-gray-500">
-          Get Your Company Registered with a Trusted Specialists
+          Browse all available services from trusted specialists
         </p>
       </div>
 
       <div className="mt-6 flex flex-wrap items-center gap-3">
         <Select
           size="small"
-          value="price"
-          onChange={handleFilterChange}
+          value={priceFilter}
+          onChange={handlePriceFilterChange}
           className="h-9 bg-white text-sm"
         >
           <MenuItem value="price">Price</MenuItem>
@@ -109,8 +121,8 @@ export default function AllServicesPage() {
         </Select>
         <Select
           size="small"
-          value="sort"
-          onChange={handleFilterChange}
+          value={sortFilter}
+          onChange={handleSortFilterChange}
           className="h-9 bg-white text-sm"
         >
           <MenuItem value="sort">Sort by</MenuItem>
@@ -119,11 +131,31 @@ export default function AllServicesPage() {
         </Select>
       </div>
 
-      <section className="mt-6 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-        {SERVICES.map((service) => (
-          <ServiceCardItem key={service.id} service={service} />
-        ))}
-      </section>
+      {isLoading && (
+        <div className="mt-12 flex justify-center">
+          <CircularProgress />
+        </div>
+      )}
+
+      {isError && (
+        <div className="mt-12 text-center text-red-500">
+          Failed to load services. Please try again later.
+        </div>
+      )}
+
+      {!isLoading && !isError && services.length === 0 && (
+        <div className="mt-12 text-center text-gray-500">
+          No services available at the moment.
+        </div>
+      )}
+
+      {!isLoading && !isError && services.length > 0 && (
+        <section className="mt-6 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+          {services.map((service) => (
+            <ServiceCardItem key={service.id} service={service} />
+          ))}
+        </section>
+      )}
     </main>
   );
 }
