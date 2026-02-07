@@ -14,52 +14,84 @@ import photoUpload from '@/assets/photos/photo-scan 1.svg';
 
 export default function CreateSpecialistForm() {
   const [sidePanel, setSidePanel] = useState(false);
-  const [dragActive, setDragActive] = useState(false);
-  const [uploadedImage, setUploadedImage] = useState<string | null>(null);
-  const [fileName, setFileName] = useState<string>('');
-  const inputRef = useRef<HTMLInputElement>(null);
+
+  // Separate state for each image (order 1, 2, 3)
+  const [dragActive1, setDragActive1] = useState(false);
+  const [uploadedImage1, setUploadedImage1] = useState<string | null>(null);
+  const [fileName1, setFileName1] = useState<string>('');
+  const inputRef1 = useRef<HTMLInputElement>(null);
+
+  const [dragActive2, setDragActive2] = useState(false);
+  const [uploadedImage2, setUploadedImage2] = useState<string | null>(null);
+  const [fileName2, setFileName2] = useState<string>('');
+  const inputRef2 = useRef<HTMLInputElement>(null);
+
+  const [dragActive3, setDragActive3] = useState(false);
+  const [uploadedImage3, setUploadedImage3] = useState<string | null>(null);
+  const [fileName3, setFileName3] = useState<string>('');
+  const [fileSize1, setFileSize1] = useState<number>(0);
+  const [fileSize2, setFileSize2] = useState<number>(0);
+  const [fileSize3, setFileSize3] = useState<number>(0);
+  const inputRef3 = useRef<HTMLInputElement>(null);
+
+  // Helper function to format file size
+  const formatFileSize = (bytes: number) => {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + ' ' + sizes[i];
+  };
 
   const toggleSidePanel = () => {
     setSidePanel(!sidePanel);
   };
 
-  // Handle drag events
-  const handleDrag = (e: React.DragEvent) => {
+  // Handle drag events for each upload area
+  const handleDrag = (e: React.DragEvent, order: number) => {
     e.preventDefault();
     e.stopPropagation();
-    if (e.type === 'dragenter' || e.type === 'dragover') {
-      setDragActive(true);
-    } else if (e.type === 'dragleave') {
-      setDragActive(false);
-    }
+    const isActive = e.type === 'dragenter' || e.type === 'dragover';
+
+    if (order === 1) setDragActive1(isActive);
+    else if (order === 2) setDragActive2(isActive);
+    else if (order === 3) setDragActive3(isActive);
   };
 
   // Handle drop event
-  const handleDrop = (e: React.DragEvent) => {
+  const handleDrop = (e: React.DragEvent, order: number) => {
     e.preventDefault();
     e.stopPropagation();
-    setDragActive(false);
+
+    if (order === 1) setDragActive1(false);
+    else if (order === 2) setDragActive2(false);
+    else if (order === 3) setDragActive3(false);
 
     if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-      handleFiles(e.dataTransfer.files[0]);
+      handleFiles(e.dataTransfer.files[0], order);
     }
   };
 
   // Handle click event
-  const handleClick = () => {
-    inputRef.current?.click();
+  const handleClick = (order: number) => {
+    if (order === 1) inputRef1.current?.click();
+    else if (order === 2) inputRef2.current?.click();
+    else if (order === 3) inputRef3.current?.click();
   };
 
   // Handle file input change
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement>,
+    order: number
+  ) => {
     e.preventDefault();
     if (e.target.files && e.target.files[0]) {
-      handleFiles(e.target.files[0]);
+      handleFiles(e.target.files[0], order);
     }
   };
 
   // Process the selected file
-  const handleFiles = (file: File) => {
+  const handleFiles = (file: File, order: number) => {
     // Check file type
     if (!['image/png', 'image/jpeg', 'image/jpg'].includes(file.type)) {
       alert('Please upload a PNG, JPG, or JPEG file.');
@@ -75,18 +107,41 @@ export default function CreateSpecialistForm() {
     // Create preview URL
     const reader = new FileReader();
     reader.onload = (e) => {
-      setUploadedImage(e.target?.result as string);
-      setFileName(file.name);
+      const result = e.target?.result as string;
+      if (order === 1) {
+        setUploadedImage1(result);
+        setFileName1(file.name);
+        setFileSize1(file.size);
+      } else if (order === 2) {
+        setUploadedImage2(result);
+        setFileName2(file.name);
+        setFileSize2(file.size);
+      } else if (order === 3) {
+        setUploadedImage3(result);
+        setFileName3(file.name);
+        setFileSize3(file.size);
+      }
     };
     reader.readAsDataURL(file);
   };
 
   // Handle remove uploaded image
-  const handleRemove = () => {
-    setUploadedImage(null);
-    setFileName('');
-    if (inputRef.current) {
-      inputRef.current.value = '';
+  const handleRemove = (order: number) => {
+    if (order === 1) {
+      setUploadedImage1(null);
+      setFileName1('');
+      setFileSize1(0);
+      if (inputRef1.current) inputRef1.current.value = '';
+    } else if (order === 2) {
+      setUploadedImage2(null);
+      setFileName2('');
+      setFileSize2(0);
+      if (inputRef2.current) inputRef2.current.value = '';
+    } else if (order === 3) {
+      setUploadedImage3(null);
+      setFileName3('');
+      setFileSize3(0);
+      if (inputRef3.current) inputRef3.current.value = '';
     }
   };
 
@@ -99,28 +154,29 @@ export default function CreateSpecialistForm() {
           Register a new company | Private Limited - Sdn Bhd
         </div>
         <div className="grid grid-cols-2 gap-4 mb-6 col-span-2 ">
+          {/* Left upload area - Order 1 */}
           <div className="grid   items-stretch">
             <div
-              onDragEnter={handleDrag}
-              onDragLeave={handleDrag}
-              onDragOver={handleDrag}
-              onDrop={handleDrop}
-              onClick={handleClick}
+              onDragEnter={(e) => handleDrag(e, 1)}
+              onDragLeave={(e) => handleDrag(e, 1)}
+              onDragOver={(e) => handleDrag(e, 1)}
+              onDrop={(e) => handleDrop(e, 1)}
+              onClick={() => handleClick(1)}
               className={`flex flex-col items-center justify-center rounded-lg border-2 border-dashed cursor-pointer transition-all duration-200 p-12 ${
-                dragActive
+                dragActive1
                   ? 'border-blue-500 bg-blue-50'
                   : 'border-gray-300 bg-white hover:border-gray-400'
               }`}
             >
               <input
-                ref={inputRef}
+                ref={inputRef1}
                 type="file"
-                onChange={handleChange}
+                onChange={(e) => handleChange(e, 1)}
                 accept=".png,.jpg,.jpeg"
                 className="hidden"
               />
 
-              {!uploadedImage ? (
+              {!uploadedImage1 ? (
                 <>
                   <Image
                     src={photoUpload}
@@ -134,54 +190,41 @@ export default function CreateSpecialistForm() {
                   </p>
                 </>
               ) : (
-                <div className="w-full h-full flex flex-col items-center justify-center">
-                  <div className="relative w-40 h-40 mb-4">
-                    <img
-                      src={uploadedImage || '/placeholder.svg'}
-                      alt="Uploaded preview"
-                      className="w-full h-full object-cover rounded-lg"
-                    />
-                  </div>
-                  <p className="text-gray-700 font-medium text-sm text-center break-all max-w-xs">
-                    {fileName}
-                  </p>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleRemove();
-                    }}
-                    className="mt-4 flex items-center gap-2 px-4 py-2 text-sm text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                  >
-                    <Close className="w-4 h-4" />
-                    Remove
-                  </button>
+                <div className="w-full h-full max-h-96 flex flex-col items-center justify-center">
+                  <img
+                    src={uploadedImage1 || '/placeholder.svg'}
+                    alt="Uploaded preview"
+                    className="w-full h-full object-cover rounded-lg"
+                  />
                 </div>
               )}
             </div>
           </div>
+          {/* Right column with two upload areas */}
           <div className="flex justify-around flex-col gap-4">
+            {/* Right top upload area - Order 2 */}
             <div className="   items-stretch">
               <div
-                onDragEnter={handleDrag}
-                onDragLeave={handleDrag}
-                onDragOver={handleDrag}
-                onDrop={handleDrop}
-                onClick={handleClick}
+                onDragEnter={(e) => handleDrag(e, 2)}
+                onDragLeave={(e) => handleDrag(e, 2)}
+                onDragOver={(e) => handleDrag(e, 2)}
+                onDrop={(e) => handleDrop(e, 2)}
+                onClick={() => handleClick(2)}
                 className={`flex flex-col items-center justify-center rounded-lg border-2 border-dashed cursor-pointer transition-all duration-200 p-12 ${
-                  dragActive
+                  dragActive2
                     ? 'border-blue-500 bg-blue-50'
                     : 'border-gray-300 bg-white hover:border-gray-400'
                 }`}
               >
                 <input
-                  ref={inputRef}
+                  ref={inputRef2}
                   type="file"
-                  onChange={handleChange}
+                  onChange={(e) => handleChange(e, 2)}
                   accept=".png,.jpg,.jpeg"
                   className="hidden"
                 />
 
-                {!uploadedImage ? (
+                {!uploadedImage2 ? (
                   <>
                     <Image
                       src={photoUpload}
@@ -197,52 +240,38 @@ export default function CreateSpecialistForm() {
                   </>
                 ) : (
                   <div className="w-full h-full flex flex-col items-center justify-center">
-                    <div className="relative w-40 h-40 mb-4">
-                      <img
-                        src={uploadedImage || '/placeholder.svg'}
-                        alt="Uploaded preview"
-                        className="w-full h-full object-cover rounded-lg"
-                      />
-                    </div>
-                    <p className="text-gray-700 font-medium text-sm text-center break-all max-w-xs">
-                      {fileName}
-                    </p>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleRemove();
-                      }}
-                      className="mt-4 flex items-center gap-2 px-4 py-2 text-sm text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                    >
-                      <Close className="w-4 h-4" />
-                      Remove
-                    </button>
+                    <img
+                      src={uploadedImage2 || '/placeholder.svg'}
+                      alt="Uploaded preview"
+                      className="w-full h-full object-cover rounded-lg max-h-52"
+                    />
                   </div>
                 )}
               </div>
-            </div>{' '}
+            </div>
+            {/* Right bottom upload area - Order 3 */}
             <div className="   items-stretch">
               <div
-                onDragEnter={handleDrag}
-                onDragLeave={handleDrag}
-                onDragOver={handleDrag}
-                onDrop={handleDrop}
-                onClick={handleClick}
+                onDragEnter={(e) => handleDrag(e, 3)}
+                onDragLeave={(e) => handleDrag(e, 3)}
+                onDragOver={(e) => handleDrag(e, 3)}
+                onDrop={(e) => handleDrop(e, 3)}
+                onClick={() => handleClick(3)}
                 className={`flex flex-col items-center justify-center rounded-lg border-2 border-dashed cursor-pointer transition-all duration-200 p-12 ${
-                  dragActive
+                  dragActive3
                     ? 'border-blue-500 bg-blue-50'
                     : 'border-gray-300 bg-white hover:border-gray-400'
                 }`}
               >
                 <input
-                  ref={inputRef}
+                  ref={inputRef3}
                   type="file"
-                  onChange={handleChange}
+                  onChange={(e) => handleChange(e, 3)}
                   accept=".png,.jpg,.jpeg"
                   className="hidden"
                 />
 
-                {!uploadedImage ? (
+                {!uploadedImage3 ? (
                   <>
                     <Image
                       src={photoUpload}
@@ -258,26 +287,13 @@ export default function CreateSpecialistForm() {
                   </>
                 ) : (
                   <div className="w-full h-full flex flex-col items-center justify-center">
-                    <div className="relative w-40 h-40 mb-4">
+                   
                       <img
-                        src={uploadedImage || '/placeholder.svg'}
+                        src={uploadedImage3 || '/placeholder.svg'}
                         alt="Uploaded preview"
-                        className="w-full h-full object-cover rounded-lg"
+                        className="w-full h-full object-cover rounded-lg max-h-52"
                       />
-                    </div>
-                    <p className="text-gray-700 font-medium text-sm text-center break-all max-w-xs">
-                      {fileName}
-                    </p>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleRemove();
-                      }}
-                      className="mt-4 flex items-center gap-2 px-4 py-2 text-sm text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                    >
-                      <Close className="w-4 h-4" />
-                      Remove
-                    </button>
+               
                   </div>
                 )}
               </div>
@@ -355,6 +371,134 @@ export default function CreateSpecialistForm() {
           </div>
         </div>
       </div>
+
+      {/* List of images to remove */}
+      {(uploadedImage1 || uploadedImage2 || uploadedImage3) && (
+        <div className="mt-8 mb-8">
+          <h2 className="text-2xl font-semibold text-gray-900 mb-4">
+            Uploaded Images
+          </h2>
+          <div className="space-y-4">
+            {uploadedImage1 && (
+              <div className="bg-white rounded-lg shadow-sm p-4 border border-gray-200 flex items-center gap-4">
+                <img
+                  src={uploadedImage1}
+                  alt="Upload 1"
+                  className="w-24 h-24 object-cover rounded"
+                />
+                <div className="flex-1">
+                  <h3 className="text-gray-900 font-medium text-base mb-1">
+                    {fileName1}
+                  </h3>
+                  <div className=" gap-4 text-sm text-gray-600">
+                    <p>Size: {formatFileSize(fileSize1)}</p>
+                    <p>
+                      File type: {fileName1.split('.').pop()?.toUpperCase()}
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => handleRemove(1)}
+                  className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                  aria-label="Remove image"
+                >
+                  <svg
+                    className="w-6 h-6 text-gray-600"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                    />
+                  </svg>
+                </button>
+              </div>
+            )}
+            {uploadedImage2 && (
+              <div className="bg-white rounded-lg shadow-sm p-4 border border-gray-200 flex items-center gap-4">
+                <img
+                  src={uploadedImage2}
+                  alt="Upload 2"
+                  className="w-24 h-24 object-cover rounded"
+                />
+                <div className="flex-1">
+                  <h3 className="text-gray-900 font-medium text-base mb-1">
+                    {fileName2}
+                  </h3>
+                  <div className=" gap-4 text-sm text-gray-600">
+                    <p>Size: {formatFileSize(fileSize2)}</p>
+                    <p>
+                      File type: {fileName2.split('.').pop()?.toUpperCase()}
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => handleRemove(2)}
+                  className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                  aria-label="Remove image"
+                >
+                  <svg
+                    className="w-6 h-6 text-gray-600"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                    />
+                  </svg>
+                </button>
+              </div>
+            )}
+            {uploadedImage3 && (
+              <div className="bg-white rounded-lg shadow-sm p-4 border border-gray-200 flex items-center gap-4">
+                <img
+                  src={uploadedImage3}
+                  alt="Upload 3"
+                  className="w-24 h-24 object-cover rounded"
+                />
+                <div className="flex-1">
+                  <h3 className="text-gray-900 font-medium text-base mb-1">
+                    {fileName3}
+                  </h3>
+                  <div className=" gap-4 text-sm text-gray-600">
+                    <p>Size: {formatFileSize(fileSize3)}</p>
+                    <p>
+                      File type: {fileName3.split('.').pop()?.toUpperCase()}
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => handleRemove(3)}
+                  className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                  aria-label="Remove image"
+                >
+                  <svg
+                    className="w-6 h-6 text-gray-600"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                    />
+                  </svg>
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Description Section */}
       <div className="mt-12 mb-8">

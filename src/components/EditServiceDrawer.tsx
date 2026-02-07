@@ -16,6 +16,7 @@ import {
 
 import malaysianFlag from '@/assets/photos/flag-for-flag-malaysia-svgrepo-com 3.svg';
 import Image from 'next/image';
+import { useGetAllServiceOfferingMasterListsQuery } from '@/redux/features/serviceOfferingsMasterList/serviceOfferingsMasterList.api';
 
 interface EditServiceDrawerProps {
   open: boolean;
@@ -29,39 +30,33 @@ export default function EditServiceDrawer({
   const [selectedOfferings, setSelectedOfferings] = useState<
     { id: string; label: string; icon: React.ReactNode; description: string }[]
   >([]);
+  const { data: serviceOfferingsResponse } =
+    useGetAllServiceOfferingMasterListsQuery(undefined);
 
-  const additionalOfferingOptions = [
-    {
-      id: '1',
-      label: 'Document Verification',
-      icon: <Person />,
-      description: 'This is a document verification service',
-    },
-    {
-      id: '2',
-      label: 'Legal Review',
-      icon: <Person />,
-      description: 'This is a legal review service',
-    },
-    {
-      id: '3',
-      label: 'Expert Consultation',
-      icon: <Person />,
-      description: 'This is an expert consultation service',
-    },
-    {
-      id: '4',
-      label: 'Priority Processing',
-      icon: <Person />,
-      description: 'This is a priority processing service',
-    },
-    {
-      id: '5',
-      label: 'Notarization Service',
-      icon: <Person />,
-      description: 'This is a notarization service',
-    },
-  ];
+  const additionalOfferingOptions =
+    serviceOfferingsResponse?.data?.map(
+      (offering: {
+        id: string;
+        title: string;
+        description?: string | null;
+        secure_url?: string | null;
+      }) => ({
+        id: offering.id,
+        label: offering.title,
+        icon: offering.secure_url ? (
+          <Image
+            src={offering.secure_url}
+            alt={offering.title}
+            width={24}
+            height={24}
+            style={{ objectFit: 'contain' }}
+          />
+        ) : (
+          <Person />
+        ),
+        description: offering.description || 'No description provided',
+      })
+    ) ?? [];
 
   return (
     <Drawer
