@@ -3,32 +3,49 @@
 import EditServiceDrawer from '@/components/EditServiceDrawer';
 import Button from '@/components/ui/Button';
 import { CheckCircle, Close, CloudUpload } from '@mui/icons-material';
-import { Avatar } from '@mui/material';
-import { useRef, useState } from 'react';
+import { Avatar, CircularProgress, Alert } from '@mui/material';
+import { useRef, useState, useCallback } from 'react';
 import profilePhotoForCreateCompanySpecialists from '@/assets/photos/Profile_Picture.svg';
 import IACS_Certification from '@/assets/photos/iacs.svg';
 import maicsa_Certification from '@/assets/photos/Maicsa.svg';
 import SMM_Certification from '@/assets/photos/SSM.svg';
 import Image from 'next/image';
 import photoUpload from '@/assets/photos/photo-scan 1.svg';
+import { useCreateSpecialistMutation } from '@/redux/features/specialists/specialists.api';
 
 export default function CreateSpecialistForm() {
   const [sidePanel, setSidePanel] = useState(false);
+  const [createSpecialist, { isLoading, error }] =
+    useCreateSpecialistMutation();
+
+  // Form state
+  const [formData, setFormData] = useState({
+    title: '',
+    description: '',
+    base_price: 0,
+    duration_days: 0,
+  });
+
+  const [selectedOfferings, setSelectedOfferings] = useState<string[]>([]);
+  const [files, setFiles] = useState<File[]>([]);
 
   // Separate state for each image (order 1, 2, 3)
   const [dragActive1, setDragActive1] = useState(false);
   const [uploadedImage1, setUploadedImage1] = useState<string | null>(null);
   const [fileName1, setFileName1] = useState<string>('');
+  const [fileObj1, setFileObj1] = useState<File | null>(null);
   const inputRef1 = useRef<HTMLInputElement>(null);
 
   const [dragActive2, setDragActive2] = useState(false);
   const [uploadedImage2, setUploadedImage2] = useState<string | null>(null);
   const [fileName2, setFileName2] = useState<string>('');
+  const [fileObj2, setFileObj2] = useState<File | null>(null);
   const inputRef2 = useRef<HTMLInputElement>(null);
 
   const [dragActive3, setDragActive3] = useState(false);
   const [uploadedImage3, setUploadedImage3] = useState<string | null>(null);
   const [fileName3, setFileName3] = useState<string>('');
+  const [fileObj3, setFileObj3] = useState<File | null>(null);
   const [fileSize1, setFileSize1] = useState<number>(0);
   const [fileSize2, setFileSize2] = useState<number>(0);
   const [fileSize3, setFileSize3] = useState<number>(0);
@@ -112,14 +129,17 @@ export default function CreateSpecialistForm() {
         setUploadedImage1(result);
         setFileName1(file.name);
         setFileSize1(file.size);
+        setFileObj1(file);
       } else if (order === 2) {
         setUploadedImage2(result);
         setFileName2(file.name);
         setFileSize2(file.size);
+        setFileObj2(file);
       } else if (order === 3) {
         setUploadedImage3(result);
         setFileName3(file.name);
         setFileSize3(file.size);
+        setFileObj3(file);
       }
     };
     reader.readAsDataURL(file);
@@ -131,27 +151,158 @@ export default function CreateSpecialistForm() {
       setUploadedImage1(null);
       setFileName1('');
       setFileSize1(0);
+      setFileObj1(null);
       if (inputRef1.current) inputRef1.current.value = '';
     } else if (order === 2) {
       setUploadedImage2(null);
       setFileName2('');
       setFileSize2(0);
+      setFileObj2(null);
       if (inputRef2.current) inputRef2.current.value = '';
     } else if (order === 3) {
       setUploadedImage3(null);
       setFileName3('');
       setFileSize3(0);
+      setFileObj3(null);
       if (inputRef3.current) inputRef3.current.value = '';
     }
   };
 
+  // Handle adding specialist from drawer
+  const handleAddSpecialist = useCallback(
+    async (
+      data: {
+        title: string;
+        description: string;
+        base_price: number;
+        duration_days: number;
+        service_offerings_master_list_ids?: string[];
+      },
+      photos: File[]
+    ) => {
+      try {
+        await createSpecialist({
+          data,
+          photos,
+        }).unwrap();
+
+        alert('Specialist created successfully!');
+        // Reset form
+        setFormData({
+          title: '',
+          description: '',
+          base_price: 0,
+          duration_days: 0,
+        });
+        setSelectedOfferings([]);
+        handleRemove(1);
+        handleRemove(2);
+        handleRemove(3);
+      } catch (err) {
+        console.error('Error creating specialist:', err);
+        throw err;
+      }
+    },
+    [createSpecialist]
+  );
+
+  // Handle form submission
+  const handlePublish = useCallback(async () => {
+    // Validate required fields
+    if (!formData.title || formData.title.trim() === '') {
+      alert('Please enter a service title in the Edit panel');
+      return;
+    }
+
+    if (!formData.description || formData.description.trim() === '') {
+      alert('Please enter a service description in the Edit panel');
+      return;
+    }
+
+    if (
+      formData.base_price === undefined ||
+      formData.base_price === null ||
+      Number(formData.base_price) <= 0
+    ) {
+      alert('Please enter a valid price in the Edit panel');
+      return;
+    }
+
+    if (
+      formData.duration_days === undefined ||
+      formData.duration_days === null ||
+      Number(formData.duration_days) <= 0
+    ) {
+      alert('Please enter a valid duration in the Edit panel');
+      return;
+    }
+
+    // Collect uploaded files
+    const uploadedFiles: File[] = [];
+    if (fileObj1) uploadedFiles.push(fileObj1);
+    if (fileObj2) uploadedFiles.push(fileObj2);
+    if (fileObj3) uploadedFiles.push(fileObj3);
+
+    if (uploadedFiles.length === 0) {
+      alert('Please upload at least one image');
+      return;
+    }
+
+    try {
+      const submitData = {
+        title: String(formData.title),
+        description: String(formData.description),
+        base_price: Number(formData.base_price),
+        duration_days: Number(formData.duration_days),
+        is_draft: false,
+        ...(selectedOfferings.length > 0 && {
+          service_offerings_master_list_ids: selectedOfferings,
+        }),
+      };
+
+      await createSpecialist({
+        data: submitData,
+        photos: uploadedFiles,
+      }).unwrap();
+
+      alert('Specialist created successfully!');
+      // Reset form
+      setFormData({
+        title: '',
+        description: '',
+        base_price: 0,
+        duration_days: 0,
+      });
+      setSelectedOfferings([]);
+      handleRemove(1);
+      handleRemove(2);
+      handleRemove(3);
+    } catch (err) {
+      console.error('Error creating specialist:', err);
+      alert('Failed to create specialist. Please try again.');
+    }
+  }, [
+    formData,
+    selectedOfferings,
+    fileObj1,
+    fileObj2,
+    fileObj3,
+    createSpecialist,
+  ]);
+
   return (
     <div className="px-6 pt-20  mx-auto min-h-screen">
+      {!!error && (
+        <Alert severity="error" className="mb-4">
+          Failed to create specialist. Please try again.
+        </Alert>
+      )}
       {/* Main Content */}
       <div className="rounded-lg  grid grid-cols-3 gap-6">
         {/* Service Images */}
         <div className="col-span-2 font-red-hat-display text-2xl font-semibold text-gray-900 mb-4">
-          Register a new company | Private Limited - Sdn Bhd
+          {formData.title ||
+            'Register a new company | Private Limited - Sdn Bhd'}
         </div>
         <div className="grid grid-cols-2 gap-4 mb-6 col-span-2 ">
           {/* Left upload area - Order 1 */}
@@ -287,13 +438,11 @@ export default function CreateSpecialistForm() {
                   </>
                 ) : (
                   <div className="w-full h-full flex flex-col items-center justify-center">
-                   
-                      <img
-                        src={uploadedImage3 || '/placeholder.svg'}
-                        alt="Uploaded preview"
-                        className="w-full h-full object-cover rounded-lg max-h-52"
-                      />
-               
+                    <img
+                      src={uploadedImage3 || '/placeholder.svg'}
+                      alt="Uploaded preview"
+                      className="w-full h-full object-cover rounded-lg max-h-52"
+                    />
                   </div>
                 )}
               </div>
@@ -322,8 +471,14 @@ export default function CreateSpecialistForm() {
                 width: 'fit-content',
                 minWidth: '100px',
               }}
+              onClick={handlePublish}
+              disabled={isLoading}
             >
-              Publish
+              {isLoading ? (
+                <CircularProgress size={20} color="inherit" />
+              ) : (
+                'Publish'
+              )}
             </Button>
           </div>
           {/* card */}
@@ -342,7 +497,11 @@ export default function CreateSpecialistForm() {
             <div className="mb-6 text-center">
               <div className="inline-block border-b-2 border-gray-900 pb-2">
                 <span className="text-4xl font-semibold font-red-hat-display text-gray-900">
-                  RM 1,800
+                  RM{' '}
+                  {formData.base_price.toLocaleString('en-MY', {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2,
+                  })}
                 </span>
               </div>
             </div>
@@ -351,21 +510,45 @@ export default function CreateSpecialistForm() {
             <div className="space-y-3 mb-4">
               <div className="flex justify-between text-sm">
                 <span className="text-gray-600">Base price</span>
-                <span className="text-gray-900 font-medium">RM 1,800</span>
+                <span className="text-gray-900 font-medium">
+                  RM{' '}
+                  {formData.base_price.toLocaleString('en-MY', {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2,
+                  })}
+                </span>
               </div>
               <div className="flex justify-between text-sm border-b pb-3">
                 <span className="text-gray-600">Service processing fee</span>
-                <span className="text-gray-900 font-medium">RM 540</span>
+                <span className="text-gray-900 font-medium">
+                  RM{' '}
+                  {(formData.base_price * 0.3).toLocaleString('en-MY', {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2,
+                  })}
+                </span>
               </div>
               <div className="flex justify-between text-sm border-b pb-3">
                 <span className="text-gray-900 font-medium">Total</span>
-                <span className="text-gray-900 font-medium">RM 2340</span>
+                <span className="text-gray-900 font-medium">
+                  RM{' '}
+                  {(formData.base_price * 1.3).toLocaleString('en-MY', {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2,
+                  })}
+                </span>
               </div>
               <div className="flex justify-between text-sm pt-2">
                 <span className="text-gray-900 font-semibold">
                   Your returns
                 </span>
-                <span className="text-gray-900 font-semibold">RM 1,800</span>
+                <span className="text-gray-900 font-semibold">
+                  RM{' '}
+                  {formData.base_price.toLocaleString('en-MY', {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2,
+                  })}
+                </span>
               </div>
             </div>
           </div>
@@ -614,7 +797,21 @@ export default function CreateSpecialistForm() {
       </div>
 
       {/* Side Panel */}
-      <EditServiceDrawer open={sidePanel} onClose={toggleSidePanel} />
+      <EditServiceDrawer
+        open={sidePanel}
+        onClose={toggleSidePanel}
+        formData={formData}
+        onFormDataChange={setFormData}
+        selectedOfferings={selectedOfferings}
+        onOfferingsChange={setSelectedOfferings}
+        uploadedFiles={[
+          ...(fileObj1 ? [fileObj1] : []),
+          ...(fileObj2 ? [fileObj2] : []),
+          ...(fileObj3 ? [fileObj3] : []),
+        ]}
+        onSave={handleAddSpecialist}
+        isLoading={isLoading}
+      />
     </div>
   );
 }

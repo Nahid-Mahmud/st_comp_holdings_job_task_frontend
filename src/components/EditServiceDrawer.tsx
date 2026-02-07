@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import Button from '@/components/ui/Button';
 import TextField from '@/components/ui/TextField';
 import { CustomAutocomplete } from '@/components/inputs/Autocomplete';
@@ -12,6 +12,7 @@ import {
   Input,
   InputAdornment,
   TextareaAutosize,
+  CircularProgress,
 } from '@mui/material';
 
 import malaysianFlag from '@/assets/photos/flag-for-flag-malaysia-svgrepo-com 3.svg';
@@ -21,42 +22,158 @@ import { useGetAllServiceOfferingMasterListsQuery } from '@/redux/features/servi
 interface EditServiceDrawerProps {
   open: boolean;
   onClose: () => void;
+  formData?: {
+    title: string;
+    description: string;
+    base_price: number;
+    duration_days: number;
+  };
+  onFormDataChange?: (data: {
+    title: string;
+    description: string;
+    base_price: number;
+    duration_days: number;
+  }) => void;
+  selectedOfferings?: string[];
+  onOfferingsChange?: (offerings: string[]) => void;
+  uploadedFiles?: File[];
+  onSave?: (
+    data: {
+      title: string;
+      description: string;
+      base_price: number;
+      duration_days: number;
+      service_offerings_master_list_ids?: string[];
+    },
+    photos: File[]
+  ) => Promise<void>;
+  isLoading?: boolean;
 }
 
 export default function EditServiceDrawer({
   open,
   onClose,
+  formData = {
+    title: '',
+    description: '',
+    base_price: 0,
+    duration_days: 0,
+  },
+  onFormDataChange,
+  selectedOfferings = [],
+  onOfferingsChange,
+  uploadedFiles = [],
+  onSave,
+  isLoading = false,
 }: EditServiceDrawerProps) {
-  const [selectedOfferings, setSelectedOfferings] = useState<
+  const [localFormData, setLocalFormData] = useState(formData);
+  const [selectedOfferingObjects, setSelectedOfferingObjects] = useState<
     { id: string; label: string; icon: React.ReactNode; description: string }[]
   >([]);
+  const prevOpenRef = useRef(false);
   const { data: serviceOfferingsResponse } =
     useGetAllServiceOfferingMasterListsQuery(undefined);
 
-  const additionalOfferingOptions =
-    serviceOfferingsResponse?.data?.map(
-      (offering: {
-        id: string;
-        title: string;
-        description?: string | null;
-        secure_url?: string | null;
-      }) => ({
-        id: offering.id,
-        label: offering.title,
-        icon: offering.secure_url ? (
-          <Image
-            src={offering.secure_url}
-            alt={offering.title}
-            width={24}
-            height={24}
-            style={{ objectFit: 'contain' }}
-          />
-        ) : (
-          <Person />
-        ),
-        description: offering.description || 'No description provided',
-      })
-    ) ?? [];
+  const additionalOfferingOptions = useMemo(
+    () =>
+      serviceOfferingsResponse?.data?.map(
+        (offering: {
+          id: string;
+          title: string;
+          description?: string | null;
+          secure_url?: string | null;
+        }) => ({
+          id: offering.id,
+          label: offering.title,
+          icon: offering.secure_url ? (
+            <Image
+              src={offering.secure_url}
+              alt={offering.title}
+              width={24}
+              height={24}
+              style={{ objectFit: 'contain' }}
+            />
+          ) : (
+            <Person />
+          ),
+          description: offering.description || 'No description provided',
+        })
+      ) ?? [],
+    [serviceOfferingsResponse?.data]
+  );
+
+  // Sync local form data with parent form data only when drawer opens
+  useEffect(() => {
+    if (open && !prevOpenRef.current) {
+      // Only sync when drawer first opens
+      setLocalFormData(formData);
+      const selected = additionalOfferingOptions.filter(
+        (option: {
+          id: string;
+          label: string;
+          icon: React.ReactNode;
+          description: string;
+        }) => selectedOfferings.includes(option.id)
+      );
+      setSelectedOfferingObjects(selected);
+    }
+    prevOpenRef.current = open;
+  }, [open, additionalOfferingOptions, formData, selectedOfferings]);
+
+  const handleSave = async () => {
+    // Client-side validation
+    if (!localFormData.title || localFormData.title.trim() === '') {
+      alert('Please enter a service title');
+      return;
+    }
+
+    if (!localFormData.description || localFormData.description.trim() === '') {
+      alert('Please enter a service description');
+      return;
+    }
+
+    if (!localFormData.base_price || Number(localFormData.base_price) <= 0) {
+      alert('Please enter a valid price');
+      return;
+    }
+
+    if (
+      !localFormData.duration_days ||
+      Number(localFormData.duration_days) <= 0
+    ) {
+      alert('Please enter a valid duration');
+      return;
+    }
+
+    if (uploadedFiles.length === 0) {
+      alert('Please upload at least one image');
+      return;
+    }
+
+    try {
+      const submitData = {
+        title: String(localFormData.title),
+        description: String(localFormData.description),
+        base_price: Number(localFormData.base_price),
+        duration_days: Number(localFormData.duration_days),
+        ...(selectedOfferingObjects.length > 0 && {
+          service_offerings_master_list_ids: selectedOfferingObjects.map(
+            (o) => o.id
+          ),
+        }),
+      };
+
+      console.log('Submitting data:', submitData);
+      console.log('Uploaded files:', uploadedFiles);
+
+      if (onSave) {
+        await onSave(submitData, uploadedFiles);
+        onClose();
+      }
+    } catch (err) {
+      console.error('Error saving specialist:', err);
+    }
+  };
 
   return (
     <Drawer
@@ -80,15 +197,13 @@ export default function EditServiceDrawer({
         {/* Title Section */}
         <div>
           <h3 className="text-base font-medium text-gray-900 mb-1">Title</h3>
-          {/* <TextField
-            fullWidth
-            placeholder="Enter service title"
-            defaultValue="Register a new company | Private Limited - Sdn Bhd"
-          /> */}
           <Input
             fullWidth
             placeholder="Enter service title"
-            defaultValue=""
+            value={localFormData.title}
+            onChange={(e) =>
+              setLocalFormData({ ...localFormData, title: e.target.value })
+            }
             disableUnderline
             sx={{
               '& .MuiInputBase-input': {
@@ -113,6 +228,14 @@ export default function EditServiceDrawer({
           </h3>
           <TextareaAutosize
             placeholder="Describe your service here"
+            value={localFormData.description}
+            onChange={(e) =>
+              setLocalFormData({
+                ...localFormData,
+                description: e.target.value,
+              })
+            }
+            maxLength={500}
             className=""
             style={{
               width: '100%',
@@ -121,26 +244,30 @@ export default function EditServiceDrawer({
               border: '1px solid #D1D5DB',
               borderRadius: '4px',
               fontSize: '14px',
+              fontFamily: 'inherit',
+              resize: 'vertical',
             }}
           />
-          <div className="text-xs text-gray-400 text-right">(500 max)</div>
+          <div className="text-xs text-gray-400 text-right">
+            ({localFormData.description.length}/500)
+          </div>
         </div>
 
         <div>
           <h3 className="text-base font-medium text-gray-900 mb-1">
             Estimated Completion Time (Days)
           </h3>
-          {/* <TextField
-            fullWidth
-            placeholder="Enter service title"
-            defaultValue="Register a new company | Private Limited - Sdn Bhd"
-          /> */}
           <Input
             fullWidth
-            placeholder="Enter service title"
-            defaultValue=""
+            placeholder="Enter number of days"
+            value={localFormData.duration_days}
+            onChange={(e) => {
+              const value = parseInt(e.target.value) || 0;
+              setLocalFormData({ ...localFormData, duration_days: value });
+            }}
             disableUnderline
             type="number"
+            inputProps={{ min: 1 }}
             sx={{
               '& .MuiInputBase-input': {
                 padding: '12px 14px',
@@ -164,11 +291,11 @@ export default function EditServiceDrawer({
           />
         </div>
         {/* Price Section */}
-        <div className="flex flex-col gap-2  max-w-sm max-h-12 mb-14">
-          <label className="text-sm ">Price</label>
+        <div className="flex flex-col gap-2 max-w-sm max-h-12 mb-14">
+          <label className="text-sm">Price</label>
 
-          <div className="flex items-center ">
-            <div className="flex border-gray-300 border-l border-y h-12 items-center px-3 rounded-l  bg-gray-100">
+          <div className="flex items-center">
+            <div className="flex border-gray-300 border-l border-y h-12 items-center px-3 rounded-l bg-gray-100">
               <Image
                 src={malaysianFlag}
                 alt="Malaysia Flag"
@@ -177,22 +304,22 @@ export default function EditServiceDrawer({
                 style={{
                   width: '60px',
                 }}
-              />{' '}
+              />
               <span className="ml-1">MYR</span>
             </div>
             <input
               className="h-12 w-full border-gray-300 border-y border-r rounded-r px-2"
-              type="text"
+              type="number"
+              placeholder="0.00"
+              value={localFormData.base_price}
+              onChange={(e) => {
+                const value = parseFloat(e.target.value) || 0;
+                setLocalFormData({ ...localFormData, base_price: value });
+              }}
+              min="0"
+              step="0.01"
             />
           </div>
-        </div>
-
-        {/* Estimated Completion Time */}
-        <div>
-          <h3 className="text-lg font-medium text-gray-900 mb-4">
-            Estimated Completion Time (14 Total Days)
-          </h3>
-          <TextField fullWidth placeholder="1 day" defaultValue="1 day" />
         </div>
 
         {/* Additional Offerings */}
@@ -208,8 +335,8 @@ export default function EditServiceDrawer({
           }>
             options={additionalOfferingOptions}
             getOptionLabel={(option) => option.label}
-            value={selectedOfferings}
-            onChange={(event, newValue) => setSelectedOfferings(newValue)}
+            value={selectedOfferingObjects}
+            onChange={(event, newValue) => setSelectedOfferingObjects(newValue)}
             width="100%"
             minHeight="3.5rem"
             renderOption={(option) => (
@@ -239,11 +366,17 @@ export default function EditServiceDrawer({
           <Button
             variant="contained"
             className="bg-blue-600 text-white hover:bg-blue-700"
+            onClick={handleSave}
+            disabled={isLoading}
             sx={{
               width: '8rem',
             }}
           >
-            Save
+            {isLoading ? (
+              <CircularProgress size={20} color="inherit" />
+            ) : (
+              'Save'
+            )}
           </Button>
         </div>
       </div>

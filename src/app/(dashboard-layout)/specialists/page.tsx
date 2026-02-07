@@ -6,7 +6,7 @@ import Button from '@/components/ui/Button';
 import Chip from '@/components/ui/Chip';
 import TextField from '@/components/ui/TextField';
 import ServiceTable from '@/components/ServiceTable';
-import type { Service } from '@/types/service';
+import type { Service, Specialist } from '@/types/service';
 import {
   AddCircleOutline,
   ChevronLeft,
@@ -16,64 +16,7 @@ import {
 import { Pagination, Tab, Tabs } from '@mui/material';
 import { useState } from 'react';
 import Link from 'next/link';
-
-// Mock data
-const mockServices: Service[] = [
-  {
-    id: '1',
-    name: 'Incorporation of a new company',
-    price: 2000,
-    purchases: 20,
-    duration: '3 Days',
-    approvalStatus: 'Approved',
-    publishStatus: 'Published',
-  },
-  {
-    id: '2',
-    name: 'Incorporation of a new company',
-    price: 2000,
-    purchases: 0,
-    duration: '1 Day',
-    approvalStatus: 'Under-Review',
-    publishStatus: 'Published',
-  },
-  {
-    id: '3',
-    name: 'Incorporation of a new company',
-    price: 2000,
-    purchases: 431,
-    duration: '14 Days',
-    approvalStatus: 'Approved',
-    publishStatus: 'Not Published',
-  },
-  {
-    id: '4',
-    name: 'Incorporation of a new company',
-    price: 2000,
-    purchases: 0,
-    duration: '7 Days',
-    approvalStatus: 'Under-Review',
-    publishStatus: 'Published',
-  },
-  {
-    id: '5',
-    name: 'Incorporation of a new company',
-    price: 2000,
-    purchases: 1283,
-    duration: '4 Days',
-    approvalStatus: 'Rejected',
-    publishStatus: 'Not Published',
-  },
-  {
-    id: '6',
-    name: 'Incorporation of a new company',
-    price: 2000,
-    purchases: 9180,
-    duration: '5 Days',
-    approvalStatus: 'Rejected',
-    publishStatus: 'Not Published',
-  },
-];
+import { useGetAllSpecialistsQuery } from '@/redux/features/specialists/specialists.api';
 
 export default function SpecialistsPage() {
   const [selectedTab, setSelectedTab] = useState(0);
@@ -82,10 +25,45 @@ export default function SpecialistsPage() {
   const [page, setPage] = useState(1);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [menuServiceId, setMenuServiceId] = useState<string | null>(null);
+
+  // Fetch specialists using Redux API
+  const {
+    data: specialistsResponse,
+    isLoading,
+    isError,
+    error,
+  } = useGetAllSpecialistsQuery({
+    page,
+    limit: 10,
+    search: searchQuery || undefined,
+  });
+
+  const specialists = specialistsResponse?.data?.data || [];
+  const totalPages = specialistsResponse?.data?.meta?.totalPages || 1;
+
+  // Transform specialists data to match Service interface for the table
+  const transformedServices: Service[] = specialists.map(
+    (specialist: Specialist) => ({
+      id: specialist.id,
+      name: specialist.title,
+      price: Number(specialist.base_price),
+      purchases: 0, // This would need to come from actual purchase data
+      duration: `${specialist.duration_days} Days`,
+      approvalStatus:
+        specialist.verification_status === 'APPROVED'
+          ? 'Approved'
+          : specialist.verification_status === 'PENDING'
+            ? 'Under-Review'
+            : 'Rejected',
+      publishStatus: specialist.is_draft ? 'Not Published' : 'Published',
+    })
+  );
+
   const handleMenuOpen = (event: React.MouseEvent<HTMLElement>, id: string) => {
     setAnchorEl(event.currentTarget);
     setMenuServiceId(id);
   };
+
   const handleMenuClose = () => {
     setAnchorEl(null);
     setMenuServiceId(null);
@@ -97,7 +75,7 @@ export default function SpecialistsPage() {
 
   const handleSelectAll = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.checked) {
-      setSelectedServices(mockServices.map((s) => s.id));
+      setSelectedServices(transformedServices.map((s) => s.id));
     } else {
       setSelectedServices([]);
     }
@@ -125,6 +103,36 @@ export default function SpecialistsPage() {
   const getPublishStatusColor = (status: Service['publishStatus']) => {
     return status === 'Published' ? 'success' : 'error';
   };
+
+  // Handle search with debouncing
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchQuery(e.target.value);
+    setPage(1); // Reset to first page when searching
+  };
+
+  if (isLoading) {
+    return (
+      <div className="p-6 bg-gray-50 min-h-screen">
+        <Header />
+        <div className="flex items-center justify-center h-64">
+          <div className="text-lg text-gray-600">Loading specialists...</div>
+        </div>
+      </div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <div className="p-6 bg-gray-50 min-h-screen">
+        <Header />
+        <div className="flex items-center justify-center h-64">
+          <div className="text-lg text-red-600">
+            Error loading specialists. Please try again.
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="p-6 bg-gray-50 min-h-screen ">
@@ -181,9 +189,9 @@ export default function SpecialistsPage() {
         {/* Search and Actions */}
         <div className="mb-6 flex items-center justify-between gap-4">
           <TextField
-            placeholder="Search Services"
+            placeholder="Search Specialists"
             value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            onChange={handleSearchChange}
             size="small"
             className="bg-[#f1f1f1] placeholder:font-semibold"
           />
@@ -196,13 +204,12 @@ export default function SpecialistsPage() {
                   bgcolor: 'primary.main',
                 }}
               >
-                Create
+                Create Specialist
               </Button>
             </Link>
             <Button
               variant="outlined"
               startIcon={<FileDownloadOutlined />}
-              // className="border-gray-300 text-gray-700 normal-case"
               className="font-proxima-nova"
               sx={{
                 bgcolor: 'secondary.main',
@@ -216,7 +223,7 @@ export default function SpecialistsPage() {
 
         {/* Table */}
         <ServiceTable
-          services={mockServices}
+          services={transformedServices}
           selectedServices={selectedServices}
           onSelectAll={handleSelectAll}
           onSelectOne={handleSelectOne}
@@ -229,7 +236,7 @@ export default function SpecialistsPage() {
         {/* Pagination */}
         <div className="mt-6 flex items-center justify-center">
           <Pagination
-            count={10}
+            count={totalPages}
             page={page}
             onChange={(_event, value) => setPage(value)}
             shape="rounded"
