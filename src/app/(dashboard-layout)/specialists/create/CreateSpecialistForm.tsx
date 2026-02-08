@@ -1,22 +1,22 @@
 'use client';
 
-import EditServiceDrawer from '@/components/EditServiceDrawer';
-import Button from '@/components/ui/Button';
-import { CheckCircle, Close, CloudUpload } from '@mui/icons-material';
-import { Avatar, CircularProgress } from '@mui/material';
-import { useRef, useState } from 'react';
-import profilePhotoForCreateCompanySpecialists from '@/assets/photos/Profile_Picture.svg';
 import IACS_Certification from '@/assets/photos/iacs.svg';
 import maicsa_Certification from '@/assets/photos/Maicsa.svg';
-import SMM_Certification from '@/assets/photos/SSM.svg';
-import Image from 'next/image';
 import photoUpload from '@/assets/photos/photo-scan 1.svg';
-import { toast } from 'sonner';
+import profilePhotoForCreateCompanySpecialists from '@/assets/photos/Profile_Picture.svg';
+import SMM_Certification from '@/assets/photos/SSM.svg';
+import EditServiceDrawer from '@/components/EditServiceDrawer';
+import Button from '@/components/ui/Button';
 import {
   useCreateSpecialistMutation,
   useUpdateSpecialistMutation,
 } from '@/redux/features/specialists/specialists.api';
+import { CheckCircle } from '@mui/icons-material';
+import { Avatar, CircularProgress } from '@mui/material';
+import Image from 'next/image';
 import { useRouter } from 'next/navigation';
+import { useRef, useState } from 'react';
+import { toast } from 'sonner';
 
 export default function CreateSpecialistForm() {
   const [sidePanel, setSidePanel] = useState(false);

@@ -1,23 +1,29 @@
 'use client';
 
-import { useState, useEffect, useMemo, useRef } from 'react';
-import Button from '@/components/ui/Button';
-import TextField from '@/components/ui/TextField';
 import { CustomAutocomplete } from '@/components/inputs/Autocomplete';
-import { AttachFile, Close, Person } from '@mui/icons-material';
+import Button from '@/components/ui/Button';
+import { Close, Person } from '@mui/icons-material';
 import {
-  Divider,
+  CircularProgress,
   Drawer,
   IconButton,
   Input,
-  InputAdornment,
   TextareaAutosize,
-  CircularProgress,
 } from '@mui/material';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { z } from 'zod';
 
 import malaysianFlag from '@/assets/photos/flag-for-flag-malaysia-svgrepo-com 3.svg';
-import Image from 'next/image';
 import { useGetAllServiceOfferingMasterListsQuery } from '@/redux/features/serviceOfferingsMasterList/serviceOfferingsMasterList.api';
+import Image from 'next/image';
+
+// Zod validation schema
+const serviceSchema = z.object({
+  title: z.string().min(1, 'Service title is required').trim(),
+  description: z.string().min(1, 'Service description is required').trim(),
+  base_price: z.number().positive('Price must be greater than 0'),
+  duration_days: z.number().int().positive('Duration must be at least 1 day'),
+});
 
 interface EditServiceDrawerProps {
   open: boolean;
@@ -70,6 +76,7 @@ export default function EditServiceDrawer({
   const [selectedOfferingObjects, setSelectedOfferingObjects] = useState<
     { id: string; label: string; icon: React.ReactNode; description: string }[]
   >([]);
+  const [errors, setErrors] = useState<Record<string, string>>({});
   const prevOpenRef = useRef(false);
   const { data: serviceOfferingsResponse } =
     useGetAllServiceOfferingMasterListsQuery(undefined);
@@ -116,46 +123,68 @@ export default function EditServiceDrawer({
         }) => selectedOfferings.includes(option.id)
       );
       setSelectedOfferingObjects(selected);
+      setErrors({}); // Clear errors when drawer opens
     }
     prevOpenRef.current = open;
   }, [open, additionalOfferingOptions, formData, selectedOfferings]);
 
   const handleSave = async () => {
-    // Client-side validation
-    if (!localFormData.title || localFormData.title.trim() === '') {
-      alert('Please enter a service title');
+    // Clear previous errors
+    setErrors({});
+
+    // Collect all validation errors
+    const fieldErrors: Record<string, string> = {};
+
+    // Validate form data with Zod
+    const validationResult = serviceSchema.safeParse({
+      title: localFormData.title,
+      description: localFormData.description,
+      base_price: Number(localFormData.base_price),
+      duration_days: Number(localFormData.duration_days),
+    });
+
+    if (!validationResult.success) {
+      // Map Zod errors to our error state
+      validationResult.error.issues.forEach((err) => {
+        if (err.path[0]) {
+          fieldErrors[err.path[0] as string] = err.message;
+        }
+      });
+    }
+
+    // Check for service offerings
+    if (selectedOfferingObjects.length === 0) {
+      fieldErrors.offerings = 'Please select at least one service offering';
+    }
+
+    // Check for uploaded files - must be exactly 3
+    if (uploadedFiles.length !== 3) {
+      if (uploadedFiles.length === 0) {
+        fieldErrors.files = 'Please select all images';
+      } else if (uploadedFiles.length < 3) {
+        fieldErrors.files = `Please select ${3 - uploadedFiles.length} more image${3 - uploadedFiles.length > 1 ? 's' : ''} (${uploadedFiles.length}/3)`;
+      } else {
+        fieldErrors.files = `Too many images. Please select only 3 images (${uploadedFiles.length}/3)`;
+      }
+    }
+
+    // If there are any errors, set them and return
+    if (Object.keys(fieldErrors).length > 0) {
+      setErrors(fieldErrors);
       return;
     }
 
-    if (!localFormData.description || localFormData.description.trim() === '') {
-      alert('Please enter a service description');
-      return;
-    }
-
-    if (!localFormData.base_price || Number(localFormData.base_price) <= 0) {
-      alert('Please enter a valid price');
-      return;
-    }
-
-    if (
-      !localFormData.duration_days ||
-      Number(localFormData.duration_days) <= 0
-    ) {
-      alert('Please enter a valid duration');
-      return;
-    }
-
-    if (uploadedFiles.length === 0) {
-      alert('Please upload at least one image');
+    // TypeScript guard - validationResult must be successful at this point
+    if (!validationResult.success) {
       return;
     }
 
     try {
       const submitData = {
-        title: String(localFormData.title),
-        description: String(localFormData.description),
-        base_price: Number(localFormData.base_price),
-        duration_days: Number(localFormData.duration_days),
+        title: validationResult.data.title,
+        description: validationResult.data.description,
+        base_price: validationResult.data.base_price,
+        duration_days: validationResult.data.duration_days,
         ...(selectedOfferingObjects.length > 0 && {
           service_offerings_master_list_ids: selectedOfferingObjects.map(
             (o) => o.id
@@ -201,14 +230,18 @@ export default function EditServiceDrawer({
             fullWidth
             placeholder="Enter service title"
             value={localFormData.title}
-            onChange={(e) =>
-              setLocalFormData({ ...localFormData, title: e.target.value })
-            }
+            onChange={(e) => {
+              setLocalFormData({ ...localFormData, title: e.target.value });
+              if (errors.title) {
+                setErrors({ ...errors, title: '' });
+              }
+            }}
             disableUnderline
+            error={!!errors.title}
             sx={{
               '& .MuiInputBase-input': {
                 padding: '12px 14px',
-                border: '1px solid #D1D5DB',
+                border: `1px solid ${errors.title ? '#EF4444' : '#D1D5DB'}`,
                 borderRadius: '4px',
                 fontSize: '14px',
               },
@@ -219,6 +252,9 @@ export default function EditServiceDrawer({
               },
             }}
           />
+          {errors.title && (
+            <p className="text-red-500 text-xs mt-1">{errors.title}</p>
+          )}
         </div>
 
         {/* Description Section */}
@@ -229,27 +265,35 @@ export default function EditServiceDrawer({
           <TextareaAutosize
             placeholder="Describe your service here"
             value={localFormData.description}
-            onChange={(e) =>
+            onChange={(e) => {
               setLocalFormData({
                 ...localFormData,
                 description: e.target.value,
-              })
-            }
+              });
+              if (errors.description) {
+                setErrors({ ...errors, description: '' });
+              }
+            }}
             maxLength={500}
             className=""
             style={{
               width: '100%',
               minHeight: '100px',
               padding: '12px 14px',
-              border: '1px solid #D1D5DB',
+              border: `1px solid ${errors.description ? '#EF4444' : '#D1D5DB'}`,
               borderRadius: '4px',
               fontSize: '14px',
               fontFamily: 'inherit',
               resize: 'vertical',
             }}
           />
-          <div className="text-xs text-gray-400 text-right">
-            ({localFormData.description.length}/500)
+          <div className="flex justify-between items-center">
+            {errors.description && (
+              <p className="text-red-500 text-xs mt-1">{errors.description}</p>
+            )}
+            <div className="text-xs text-gray-400 text-right ml-auto">
+              ({localFormData.description.length}/500)
+            </div>
           </div>
         </div>
 
@@ -264,14 +308,18 @@ export default function EditServiceDrawer({
             onChange={(e) => {
               const value = parseInt(e.target.value) || 0;
               setLocalFormData({ ...localFormData, duration_days: value });
+              if (errors.duration_days) {
+                setErrors({ ...errors, duration_days: '' });
+              }
             }}
             disableUnderline
             type="number"
             inputProps={{ min: 1 }}
+            error={!!errors.duration_days}
             sx={{
               '& .MuiInputBase-input': {
                 padding: '12px 14px',
-                border: '1px solid #D1D5DB',
+                border: `1px solid ${errors.duration_days ? '#EF4444' : '#D1D5DB'}`,
                 borderRadius: '4px',
                 fontSize: '14px',
                 '&::-webkit-outer-spin-button, &::-webkit-inner-spin-button': {
@@ -289,6 +337,9 @@ export default function EditServiceDrawer({
               },
             }}
           />
+          {errors.duration_days && (
+            <p className="text-red-500 text-xs mt-1">{errors.duration_days}</p>
+          )}
         </div>
         {/* Price Section */}
         <div className="flex flex-col gap-2 max-w-sm max-h-12 mb-14">
@@ -308,18 +359,26 @@ export default function EditServiceDrawer({
               <span className="ml-1">MYR</span>
             </div>
             <input
-              className="h-12 w-full border-gray-300 border-y border-r rounded-r px-2"
+              className={`h-12 w-full border-y border-r rounded-r px-2 ${
+                errors.base_price ? 'border-red-500' : 'border-gray-300'
+              }`}
               type="number"
               placeholder="0.00"
               value={localFormData.base_price}
               onChange={(e) => {
                 const value = parseFloat(e.target.value) || 0;
                 setLocalFormData({ ...localFormData, base_price: value });
+                if (errors.base_price) {
+                  setErrors({ ...errors, base_price: '' });
+                }
               }}
               min="0"
               step="0.01"
             />
           </div>
+          {errors.base_price && (
+            <p className="text-red-500 text-xs mt-1">{errors.base_price}</p>
+          )}
         </div>
 
         {/* Additional Offerings */}
@@ -336,7 +395,12 @@ export default function EditServiceDrawer({
             options={additionalOfferingOptions}
             getOptionLabel={(option) => option.label}
             value={selectedOfferingObjects}
-            onChange={(event, newValue) => setSelectedOfferingObjects(newValue)}
+            onChange={(event, newValue) => {
+              setSelectedOfferingObjects(newValue);
+              if (errors.offerings) {
+                setErrors({ ...errors, offerings: '' });
+              }
+            }}
             width="100%"
             minHeight="3.5rem"
             renderOption={(option) => (
@@ -349,6 +413,12 @@ export default function EditServiceDrawer({
               </>
             )}
           />
+          {errors.offerings && (
+            <p className="text-red-500 text-xs mt-2">{errors.offerings}</p>
+          )}
+          {errors.files && (
+            <p className="text-red-500 text-xs mt-2">{errors.files}</p>
+          )}
         </div>
 
         {/* Action Buttons */}
