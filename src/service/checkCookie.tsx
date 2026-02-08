@@ -1,6 +1,6 @@
-"use server";
+'use server';
 
-import { cookies } from "next/headers";
+import { cookies } from 'next/headers';
 
 const checkCookie = async (name: string) => {
   const cookie = (await cookies()).get(name);

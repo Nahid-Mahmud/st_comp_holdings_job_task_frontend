@@ -5,14 +5,17 @@ import { ThemeProvider } from '@mui/material/styles';
 import { theme } from '@/theme';
 import ReduxProvider from './providers/ReduxProvider';
 import { Toaster } from 'sonner';
+import { AuthProvider } from '@/contexts/AuthContext';
 
 export function Providers({ children }: { children: React.ReactNode }) {
   return (
     <ReduxProvider>
-      <AppRouterCacheProvider>
-        <ThemeProvider theme={theme}>{children}</ThemeProvider>
-        <Toaster position="top-right" richColors closeButton />
-      </AppRouterCacheProvider>
+      <AuthProvider>
+        <AppRouterCacheProvider>
+          <ThemeProvider theme={theme}>{children}</ThemeProvider>
+          <Toaster position="top-right" richColors closeButton />
+        </AppRouterCacheProvider>
+      </AuthProvider>
     </ReduxProvider>
   );
 }

@@ -1,4 +1,4 @@
-import axios, { type AxiosRequestConfig } from "axios";
+import axios, { type AxiosRequestConfig } from 'axios';
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
 
@@ -40,12 +40,15 @@ axiosInstance.interceptors.response.use(
     return response;
   },
   async function onRejected(error) {
-    const originalRequest = error.config as AxiosRequestConfig & { _retry?: boolean };
+    const originalRequest = error.config as AxiosRequestConfig & {
+      _retry?: boolean;
+    };
 
     if (
-      error.response.status === 401 &&
-      error.response.data.message === "Token has expired" &&
-      !originalRequest._retry
+      error.response?.status === 401 &&
+      // error.response.data.message === 'Token has expired' &&
+      !originalRequest._retry &&
+      originalRequest.url !== '/auth/refresh-token' // Don't retry refresh token endpoint
     ) {
       originalRequest._retry = true;
 
@@ -60,13 +63,13 @@ axiosInstance.interceptors.response.use(
       isRefreshing = true;
 
       try {
-        await axiosInstance.post("/auth/refresh-token");
+        await axiosInstance.post('/auth/refresh-token');
 
         processQQueue(null);
 
         return axiosInstance(originalRequest);
       } catch (error) {
-        console.error("Error refreshing token:", error);
+        console.error('Error refreshing token:', error);
         processQQueue(error);
         return Promise.reject(error);
       } finally {
