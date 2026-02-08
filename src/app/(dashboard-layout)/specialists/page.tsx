@@ -17,6 +17,7 @@ import { Pagination, Tab, Tabs } from '@mui/material';
 import { useState } from 'react';
 import Link from 'next/link';
 import { useGetAllSpecialistsQuery } from '@/redux/features/specialists/specialists.api';
+import { useDebounce } from '@/lib/hooks';
 
 export default function SpecialistsPage() {
   const [selectedTab, setSelectedTab] = useState(0);
@@ -26,20 +27,33 @@ export default function SpecialistsPage() {
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [menuServiceId, setMenuServiceId] = useState<string | null>(null);
 
+  // Debounce search query to reduce API calls
+  const debouncedSearchQuery = useDebounce(searchQuery, 500);
+
+  // Determine is_draft filter based on selected tab
+  const getDraftFilter = () => {
+    if (selectedTab === 1) return true; // Drafts tab
+    if (selectedTab === 2) return false; // Published tab
+    return undefined; // All tab - no filter
+  };
+
   // Fetch specialists using Redux API
   const {
     data: specialistsResponse,
     isLoading,
     isError,
     error,
+    isFetching,
   } = useGetAllSpecialistsQuery({
     page,
     limit: 10,
-    search: searchQuery || undefined,
+    search: debouncedSearchQuery || undefined,
+    is_draft: getDraftFilter(),
   });
 
   const specialists = specialistsResponse?.data || [];
   const totalPages = specialistsResponse?.meta?.totalPages || 1;
+  const totalCount = specialistsResponse?.meta?.total || 0;
 
   // Transform specialists data to match Service interface for the table
   const transformedServices: Service[] = specialists.map(
@@ -71,6 +85,7 @@ export default function SpecialistsPage() {
 
   const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
     setSelectedTab(newValue);
+    setPage(1); // Reset to first page when changing tabs
   };
 
   const handleSelectAll = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -87,39 +102,11 @@ export default function SpecialistsPage() {
     );
   };
 
-  const getApprovalStatusColor = (status: Service['approvalStatus']) => {
-    switch (status) {
-      case 'Approved':
-        return 'success';
-      case 'Under-Review':
-        return 'warning';
-      case 'Rejected':
-        return 'error';
-      default:
-        return 'default';
-    }
-  };
-
-  const getPublishStatusColor = (status: Service['publishStatus']) => {
-    return status === 'Published' ? 'success' : 'error';
-  };
-
   // Handle search with debouncing
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchQuery(e.target.value);
     setPage(1); // Reset to first page when searching
   };
-
-  if (isLoading) {
-    return (
-      <div className="p-6 bg-gray-50 min-h-screen">
-        <Header />
-        <div className="flex items-center justify-center h-64">
-          <div className="text-lg text-gray-600">Loading specialists...</div>
-        </div>
-      </div>
-    );
-  }
 
   if (isError) {
     return (
@@ -221,63 +208,101 @@ export default function SpecialistsPage() {
           </div>
         </div>
 
-        {/* Table */}
-        <ServiceTable
-          services={transformedServices}
-          selectedServices={selectedServices}
-          onSelectAll={handleSelectAll}
-          onSelectOne={handleSelectOne}
-          anchorEl={anchorEl}
-          menuServiceId={menuServiceId}
-          onMenuOpen={handleMenuOpen}
-          onMenuClose={handleMenuClose}
-        />
+        {/* Loading and Error States */}
+        {isLoading || isFetching ? (
+          <div className="flex items-center justify-center h-64">
+            <div className="text-center">
+              <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-blue-600 border-r-transparent mb-2"></div>
+              <p className="text-gray-600">Loading specialists...</p>
+            </div>
+          </div>
+        ) : isError ? (
+          <div className="flex items-center justify-center h-64">
+            <div className="text-center">
+              <p className="text-red-600 font-semibold mb-2">
+                Error loading specialists
+              </p>
+              <p className="text-gray-600 text-sm">Please try again later</p>
+            </div>
+          </div>
+        ) : transformedServices.length === 0 ? (
+          <div className="flex items-center justify-center h-64">
+            <div className="text-center">
+              <p className="text-gray-600 font-semibold mb-2">
+                No specialists found
+              </p>
+              <p className="text-gray-500 text-sm">
+                {searchQuery
+                  ? 'Try adjusting your search'
+                  : selectedTab === 1
+                    ? 'No draft specialists yet'
+                    : selectedTab === 2
+                      ? 'No published specialists yet'
+                      : 'Create your first specialist to get started'}
+              </p>
+            </div>
+          </div>
+        ) : (
+          <>
+            {/* Table */}
+            <ServiceTable
+              services={transformedServices}
+              selectedServices={selectedServices}
+              onSelectAll={handleSelectAll}
+              onSelectOne={handleSelectOne}
+              anchorEl={anchorEl}
+              menuServiceId={menuServiceId}
+              onMenuOpen={handleMenuOpen}
+              onMenuClose={handleMenuClose}
+            />
 
-        {/* Pagination */}
-        <div className="mt-6 flex items-center justify-center">
-          <Pagination
-            count={totalPages}
-            page={page}
-            onChange={(_event, value) => setPage(value)}
-            shape="rounded"
-            renderItem={(item) => (
-              <div className="mx-0.5">
-                {item.type === 'previous' ? (
-                  <button
-                    onClick={item.onClick}
-                    disabled={item.disabled}
-                    className="px-3 py-1 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1 cursor-pointer"
-                  >
-                    <ChevronLeft fontSize="small" />
-                    Previous
-                  </button>
-                ) : item.type === 'next' ? (
-                  <button
-                    onClick={item.onClick}
-                    disabled={item.disabled}
-                    className="px-3 py-1 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1 cursor-pointer"
-                  >
-                    Next
-                    <ChevronRight fontSize="small" />
-                  </button>
-                ) : item.type === 'page' ? (
-                  <button
-                    onClick={item.onClick}
-                    className={`px-3 py-1 text-sm font-medium rounded-full cursor-pointer ${
-                      item.selected
-                        ? 'bg-blue-900 text-white'
-                        : 'text-gray-700 hover:bg-gray-100'
-                    }`}
-                  >
-                    {item.page}
-                  </button>
-                ) : (
-                  <span className="px-2 py-1 text-gray-400">...</span>
+            {/* Pagination */}
+            <div className="mt-6 flex items-center justify-center">
+              <Pagination
+                count={totalPages}
+                page={page}
+                onChange={(_event, value) => setPage(value)}
+                shape="rounded"
+                renderItem={(item) => (
+                  <div className="mx-0.5">
+                    {item.type === 'previous' ? (
+                      <button
+                        onClick={item.onClick}
+                        disabled={item.disabled}
+                        className="px-3 py-1 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1 cursor-pointer"
+                      >
+                        <ChevronLeft fontSize="small" />
+                        Previous
+                      </button>
+                    ) : item.type === 'next' ? (
+                      <button
+                        onClick={item.onClick}
+                        disabled={item.disabled}
+                        className="px-3 py-1 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1 cursor-pointer"
+                      >
+                        Next
+                        <ChevronRight fontSize="small" />
+                      </button>
+                    ) : item.type === 'page' ? (
+                      <button
+                        onClick={item.onClick}
+                        className={`px-3 py-1 text-sm font-medium rounded-full cursor-pointer ${
+                          item.selected
+                            ? 'bg-blue-900 text-white'
+                            : 'text-gray-700 hover:bg-gray-100'
+                        }`}
+                      >
+                        {item.page}
+                      </button>
+                    ) : (
+                      <span className="px-2 py-1 text-gray-400">...</span>
+                    )}
+                  </div>
                 )}
-              </div>
-            )}
-          />
-        </div>
+              />
+            </div>
+          </>
+        )}
       </div>
     </div>
   );

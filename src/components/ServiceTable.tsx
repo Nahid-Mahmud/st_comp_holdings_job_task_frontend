@@ -17,6 +17,7 @@ import { MoreVert } from '@mui/icons-material';
 import pencilPlusIcon from '@/assets/icons/pencil_plus.svg';
 import deleteIcon from '@/assets/icons/delete.svg';
 import Image from 'next/image';
+import { useRouter } from 'next/navigation';
 
 interface ServiceTableProps {
   services: Service[];
@@ -39,6 +40,7 @@ export default function ServiceTable({
   onMenuOpen,
   onMenuClose,
 }: ServiceTableProps) {
+  const router = useRouter();
   return (
     <TableContainer component={Paper} className="shadow-sm">
       <Table>
@@ -203,6 +205,7 @@ export default function ServiceTable({
                 <Button
                   variant="contained"
                   size="small"
+                  className="w-28"
                   sx={{
                     bgcolor:
                       service.publishStatus === 'Published'
@@ -247,6 +250,7 @@ export default function ServiceTable({
                       className="flex items-center w-full px-4 py-2 text-sm hover:bg-gray-100"
                       onClick={() => {
                         // handle edit
+                        router.push(`/specialists/edit/${service.id}`);
                         onMenuClose();
                       }}
                     >
