@@ -53,7 +53,7 @@ export const specialistsApi = baseApi.injectEndpoints({
 
     // Get all specialists with pagination and filters
     getAllSpecialists: builder.query<
-      ApiResponse<PaginatedSpecialistsResponse>,
+      PaginatedSpecialistsResponse,
       SpecialistsQueryParams
     >({
       query: (params) => ({
@@ -61,9 +61,9 @@ export const specialistsApi = baseApi.injectEndpoints({
         params,
       }),
       providesTags: (result) =>
-        result?.data?.data
+        result?.data
           ? [
-              ...result.data.data.map(({ id }) => ({
+              ...result.data.map(({ id }) => ({
                 type: 'specialists' as const,
                 id,
               })),

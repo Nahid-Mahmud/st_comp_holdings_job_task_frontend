@@ -11,17 +11,20 @@ import {
   useCreateSpecialistMutation,
   useUpdateSpecialistMutation,
 } from '@/redux/features/specialists/specialists.api';
+import { useGetAllServiceOfferingMasterListsQuery } from '@/redux/features/serviceOfferingsMasterList/serviceOfferingsMasterList.api';
 import { CheckCircle } from '@mui/icons-material';
 import { Avatar, CircularProgress } from '@mui/material';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import { useRef, useState } from 'react';
+import { useRef, useState, useMemo } from 'react';
 import { toast } from 'sonner';
 
 export default function CreateSpecialistForm() {
   const [sidePanel, setSidePanel] = useState(false);
   const [createSpecialist, { isLoading, error }] =
     useCreateSpecialistMutation();
+  const { data: serviceOfferingsResponse } =
+    useGetAllServiceOfferingMasterListsQuery(undefined);
 
   // Form state
   const [formData, setFormData] = useState({
@@ -62,6 +65,19 @@ export default function CreateSpecialistForm() {
     useUpdateSpecialistMutation();
 
   const router = useRouter();
+
+  // Create a map of offering IDs to titles for display
+  const offeringsMap = useMemo(() => {
+    if (!serviceOfferingsResponse?.data) return new Map();
+    return new Map(
+      serviceOfferingsResponse.data.map(
+        (offering: { id: string; title: string }) => [
+          offering.id,
+          offering.title,
+        ]
+      )
+    );
+  }, [serviceOfferingsResponse?.data]);
 
   // Helper function to format file size
   const formatFileSize = (bytes: number) => {
@@ -212,7 +228,9 @@ export default function CreateSpecialistForm() {
     // Validate required fields
     try {
       if (!serviceId) {
-        toast.error('Please create a specialist service first.');
+        toast.error('Please save the specialist service first.');
+        // open side panel to prompt user to save
+        setSidePanel(true);
         return;
       }
       const res = await updateSpecialistFn({
@@ -235,8 +253,7 @@ export default function CreateSpecialistForm() {
       <div className="rounded-lg  grid grid-cols-3 gap-6">
         {/* Service Images */}
         <div className="col-span-2 font-red-hat-display text-2xl font-semibold text-gray-900 mb-4">
-          {formData.title ||
-            'Register a new company | Private Limited - Sdn Bhd'}
+          {'Register a new company | Private Limited - Sdn Bhd'}
         </div>
         <div className="grid grid-cols-2 gap-4 mb-6 col-span-2 ">
           {/* Left upload area - Order 1 */}
@@ -622,7 +639,15 @@ export default function CreateSpecialistForm() {
         <h2 className="text-2xl font-semibold text-gray-900 mb-2">
           Description
         </h2>
-        <p className="text-gray-500 text-sm mb-4">Describe your service here</p>
+        {formData.description ? (
+          <p className="text-gray-700 text-base leading-relaxed mb-4">
+            {formData.description}
+          </p>
+        ) : (
+          <p className="text-gray-500 text-sm mb-4">
+            Describe your service here
+          </p>
+        )}
         <div className="border-b border-gray-200"></div>
       </div>
 
@@ -631,9 +656,22 @@ export default function CreateSpecialistForm() {
         <h2 className="text-2xl font-semibold text-gray-900 mb-2">
           Additional Offerings
         </h2>
-        <p className="text-gray-500 text-sm mb-4">
-          Enhance your service by adding additional offerings
-        </p>
+        {selectedOfferings.length > 0 ? (
+          <div className="space-y-2 mb-4">
+            {selectedOfferings.map((offeringId, index) => (
+              <div key={index} className="flex items-center gap-2">
+                <CheckCircle sx={{ width: 20, height: 20, color: '#10b981' }} />
+                <span className="text-gray-700 text-base">
+                  {offeringsMap.get(offeringId) || offeringId}
+                </span>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p className="text-gray-500 text-sm mb-4">
+            Enhance your service by adding additional offerings
+          </p>
+        )}
         <div className="border-b border-gray-200"></div>
       </div>
 

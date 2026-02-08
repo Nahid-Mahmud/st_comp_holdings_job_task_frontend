@@ -231,7 +231,9 @@ export default function EditServiceDrawer({
             placeholder="Enter service title"
             value={localFormData.title}
             onChange={(e) => {
-              setLocalFormData({ ...localFormData, title: e.target.value });
+              const newData = { ...localFormData, title: e.target.value };
+              setLocalFormData(newData);
+              onFormDataChange?.(newData);
               if (errors.title) {
                 setErrors({ ...errors, title: '' });
               }
@@ -266,10 +268,12 @@ export default function EditServiceDrawer({
             placeholder="Describe your service here"
             value={localFormData.description}
             onChange={(e) => {
-              setLocalFormData({
+              const newData = {
                 ...localFormData,
                 description: e.target.value,
-              });
+              };
+              setLocalFormData(newData);
+              onFormDataChange?.(newData);
               if (errors.description) {
                 setErrors({ ...errors, description: '' });
               }
@@ -307,7 +311,9 @@ export default function EditServiceDrawer({
             value={localFormData.duration_days}
             onChange={(e) => {
               const value = parseInt(e.target.value) || 0;
-              setLocalFormData({ ...localFormData, duration_days: value });
+              const newData = { ...localFormData, duration_days: value };
+              setLocalFormData(newData);
+              onFormDataChange?.(newData);
               if (errors.duration_days) {
                 setErrors({ ...errors, duration_days: '' });
               }
@@ -367,7 +373,9 @@ export default function EditServiceDrawer({
               value={localFormData.base_price}
               onChange={(e) => {
                 const value = parseFloat(e.target.value) || 0;
-                setLocalFormData({ ...localFormData, base_price: value });
+                const newData = { ...localFormData, base_price: value };
+                setLocalFormData(newData);
+                onFormDataChange?.(newData);
                 if (errors.base_price) {
                   setErrors({ ...errors, base_price: '' });
                 }
@@ -397,6 +405,7 @@ export default function EditServiceDrawer({
             value={selectedOfferingObjects}
             onChange={(event, newValue) => {
               setSelectedOfferingObjects(newValue);
+              onOfferingsChange?.(newValue.map((o) => o.id));
               if (errors.offerings) {
                 setErrors({ ...errors, offerings: '' });
               }

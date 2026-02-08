@@ -38,8 +38,8 @@ export default function SpecialistsPage() {
     search: searchQuery || undefined,
   });
 
-  const specialists = specialistsResponse?.data?.data || [];
-  const totalPages = specialistsResponse?.data?.meta?.totalPages || 1;
+  const specialists = specialistsResponse?.data || [];
+  const totalPages = specialistsResponse?.meta?.totalPages || 1;
 
   // Transform specialists data to match Service interface for the table
   const transformedServices: Service[] = specialists.map(
