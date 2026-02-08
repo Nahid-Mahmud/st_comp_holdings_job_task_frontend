@@ -45,9 +45,7 @@ export default function AllServicesPage() {
   const services: ServiceCard[] = useMemo(() => {
     if (!data?.data) return [];
 
-    let specialists = Array.isArray(data.data)
-      ? [...data.data]
-      : [...(data.data.data || [])];
+    let specialists = data.data;
 
     // Apply sorting
     if (sortFilter === 'popular') {
