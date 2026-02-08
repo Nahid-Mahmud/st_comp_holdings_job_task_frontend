@@ -11,10 +11,10 @@ import {
   Alert,
   Snackbar,
 } from '@mui/material';
-import TextField from '@/components/ui/TextField';
-import Button from '@/components/ui/Button';
 import { z } from 'zod';
 import { useAuth } from '@/contexts/AuthContext';
+import SignInForm from '@/components/auth/SignInForm';
+import SignUpForm from '@/components/auth/SignUpForm';
 
 // Zod schemas for validation
 const signInSchema = z.object({
@@ -208,118 +208,27 @@ export default function AuthPage() {
 
           <Box sx={{ px: 4 }}>
             <TabPanel value={tabValue} index={0}>
-              <form onSubmit={handleSignIn}>
-                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                  <Typography
-                    variant="h6"
-                    sx={{ fontWeight: 600, color: 'text.primary' }}
-                  >
-                    Welcome Back
-                  </Typography>
-
-                  {signInError && (
-                    <Alert severity="error" sx={{ mb: 1 }}>
-                      {signInError}
-                    </Alert>
-                  )}
-
-                  <TextField
-                    fullWidth
-                    label="Email Address"
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="Enter your email"
-                    autoComplete="email"
-                  />
-
-                  <TextField
-                    fullWidth
-                    label="Password"
-                    type="password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder="Enter your password"
-                    autoComplete="current-password"
-                  />
-
-                  <Button
-                    type="submit"
-                    variant="contained"
-                    color="primary"
-                    size="large"
-                    fullWidth
-                    disabled={isLoginLoading}
-                    sx={{
-                      mt: 2,
-                      py: 1.5,
-                      textTransform: 'none',
-                      fontSize: '1rem',
-                      fontWeight: 600,
-                    }}
-                  >
-                    {isLoginLoading ? 'Signing In...' : 'Sign In'}
-                  </Button>
-                </Box>
-              </form>
+              <SignInForm
+                email={email}
+                password={password}
+                setEmail={setEmail}
+                setPassword={setPassword}
+                handleSignIn={handleSignIn}
+                signInError={signInError}
+                isLoginLoading={isLoginLoading}
+              />
             </TabPanel>
 
             <TabPanel value={tabValue} index={1}>
-              <form onSubmit={handleSignUp}>
-                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                  <Typography
-                    variant="h6"
-                    sx={{ fontWeight: 600, color: 'text.primary' }}
-                  >
-                    Create Account
-                  </Typography>
-
-                  {signUpError && (
-                    <Alert severity="error" sx={{ mb: 1 }}>
-                      {signUpError}
-                    </Alert>
-                  )}
-
-                  <TextField
-                    fullWidth
-                    label="Email Address"
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="Enter your email"
-                    autoComplete="email"
-                  />
-
-                  <TextField
-                    fullWidth
-                    label="Password"
-                    type="password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder="Create a password (min. 6 characters)"
-                    autoComplete="new-password"
-                    helperText="Password must be at least 6 characters long"
-                  />
-
-                  <Button
-                    type="submit"
-                    variant="contained"
-                    color="primary"
-                    size="large"
-                    fullWidth
-                    disabled={isRegisterLoading}
-                    sx={{
-                      mt: 2,
-                      py: 1.5,
-                      textTransform: 'none',
-                      fontSize: '1rem',
-                      fontWeight: 600,
-                    }}
-                  >
-                    {isRegisterLoading ? 'Signing Up...' : 'Sign Up'}
-                  </Button>
-                </Box>
-              </form>
+              <SignUpForm
+                email={email}
+                password={password}
+                setEmail={setEmail}
+                setPassword={setPassword}
+                handleSignUp={handleSignUp}
+                signUpError={signUpError}
+                isRegisterLoading={isRegisterLoading}
+              />
             </TabPanel>
           </Box>
 
