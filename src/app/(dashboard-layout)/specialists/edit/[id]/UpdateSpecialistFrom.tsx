@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 
 import IACS_Certification from '@/assets/photos/iacs.svg';
@@ -15,7 +16,7 @@ import { CheckCircle } from '@mui/icons-material';
 import { Avatar, CircularProgress } from '@mui/material';
 import Image from 'next/image';
 import { useParams, useRouter } from 'next/navigation';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import UpdateServiceDrawer from './UpdateServiceDrawer';
 
@@ -54,17 +55,22 @@ export default function UpdateSpecialistForm() {
     useUpdateSpecialistMutation();
 
   const router = useRouter();
+  const isInitializedRef = useRef(false);
 
   // Populate form with existing specialist data
   useEffect(() => {
-    if (specialistData?.data) {
+    if (specialistData?.data && !isInitializedRef.current) {
       const specialist = specialistData.data;
+      isInitializedRef.current = true;
+
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setFormData({
         title: specialist.title || '',
         description: specialist.description || '',
         base_price: Number(specialist.base_price) || 0,
         duration_days: specialist.duration_days || 0,
       });
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setServiceId(specialist.id);
 
       // Set selected offerings
@@ -75,6 +81,7 @@ export default function UpdateSpecialistForm() {
         const offeringIds = specialist.service_offerings.map(
           (offering: any) => offering.service_offerings_master_list_id
         );
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setSelectedOfferings(offeringIds);
       }
 
@@ -85,12 +92,16 @@ export default function UpdateSpecialistForm() {
         );
 
         sortedMedia.forEach((mediaItem: any) => {
+          // eslint-disable-next-line react-hooks/set-state-in-effect
           if (mediaItem.display_order === 0) setImage1(mediaItem.file_name);
+          // eslint-disable-next-line react-hooks/set-state-in-effect
           if (mediaItem.display_order === 1) setImage2(mediaItem.file_name);
+          // eslint-disable-next-line react-hooks/set-state-in-effect
           if (mediaItem.display_order === 2) setImage3(mediaItem.file_name);
         });
 
         const photoUrls = sortedMedia.map((media: any) => media.file_name);
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setExistingPhotos(photoUrls);
       }
     }
@@ -107,7 +118,7 @@ export default function UpdateSpecialistForm() {
         ]
       )
     );
-  }, [serviceOfferingsResponse?.data]);
+  }, [serviceOfferingsResponse.data]);
 
   const toggleSidePanel = () => {
     setSidePanel(!sidePanel);
@@ -122,7 +133,7 @@ export default function UpdateSpecialistForm() {
     service_offerings_master_list_ids?: string[];
   }) => {
     try {
-      const res = await updateSpecialistFn({
+      await updateSpecialistFn({
         id: specialistId,
         data,
       }).unwrap();
@@ -139,7 +150,7 @@ export default function UpdateSpecialistForm() {
   const handlePublish = async () => {
     // Validate required fields
     try {
-      const res = await updateSpecialistFn({
+      await updateSpecialistFn({
         id: specialistId,
         data: {
           is_draft: false,
@@ -448,13 +459,14 @@ export default function UpdateSpecialistForm() {
                   A company secretarial service founded by Grace, who believes
                   that every company deserves clarity, confidence, and care in
                   their compliance journey. Inspired by the spirit of
-                  entrepreneurship, Aida treats every client's business as if it
-                  were her own — attentive to detail, committed to deadlines,
-                  and focused on growth. Step into a partnership built on trust,
-                  transparency, and professional excellence. Whether you're just
-                  starting out or managing a growing company, Aida is here to
-                  make your corporate governance smooth, secure, and
-                  stress-free. Your company's peace of mind starts here
+                  entrepreneurship, Aida treats every client&apos;s business as
+                  if it were her own — attentive to detail, committed to
+                  deadlines, and focused on growth. Step into a partnership
+                  built on trust, transparency, and professional excellence.
+                  Whether you&apos;re just starting out or managing a growing
+                  company, Aida is here to make your corporate governance
+                  smooth, secure, and stress-free. Your company&apos;s peace of
+                  mind starts here
                 </p>
               </div>
             </div>

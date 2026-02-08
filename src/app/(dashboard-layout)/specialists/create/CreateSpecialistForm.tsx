@@ -35,7 +35,6 @@ export default function CreateSpecialistForm() {
   });
 
   const [selectedOfferings, setSelectedOfferings] = useState<string[]>([]);
-  const [files, setFiles] = useState<File[]>([]);
 
   // Separate state for each image (order 1, 2, 3)
   const [dragActive1, setDragActive1] = useState(false);
@@ -77,7 +76,7 @@ export default function CreateSpecialistForm() {
         ]
       )
     );
-  }, [serviceOfferingsResponse?.data]);
+  }, [serviceOfferingsResponse.data]);
 
   // Helper function to format file size
   const formatFileSize = (bytes: number) => {
@@ -724,13 +723,14 @@ export default function CreateSpecialistForm() {
                   A company secretarial service founded by Grace, who believes
                   that every company deserves clarity, confidence, and care in
                   their compliance journey. Inspired by the spirit of
-                  entrepreneurship, Aida treats every client's business as if it
-                  were her own — attentive to detail, committed to deadlines,
-                  and focused on growth. Step into a partnership built on trust,
-                  transparency, and professional excellence. Whether you're just
-                  starting out or managing a growing company, Aida is here to
-                  make your corporate governance smooth, secure, and
-                  stress-free. Your company's peace of mind starts here
+                  entrepreneurship, Aida treats every client&apos;s business as
+                  if it were her own — attentive to detail, committed to
+                  deadlines, and focused on growth. Step into a partnership
+                  built on trust, transparency, and professional excellence.
+                  Whether you&apos;re just starting out or managing a growing
+                  company, Aida is here to make your corporate governance
+                  smooth, secure, and stress-free. Your company&apos;s peace of
+                  mind starts here
                 </p>
               </div>
             </div>

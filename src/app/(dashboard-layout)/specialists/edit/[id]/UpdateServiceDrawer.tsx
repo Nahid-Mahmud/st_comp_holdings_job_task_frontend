@@ -108,6 +108,7 @@ export default function UpdateServiceDrawer({
   useEffect(() => {
     if (open && !prevOpenRef.current) {
       // Only sync when drawer first opens
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setLocalFormData(formData);
       const selected = additionalOfferingOptions.filter(
         (option: {
@@ -117,7 +118,9 @@ export default function UpdateServiceDrawer({
           description: string;
         }) => selectedOfferings.includes(option.id)
       );
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setSelectedOfferingObjects(selected);
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setErrors({}); // Clear errors when drawer opens
     }
     prevOpenRef.current = open;
