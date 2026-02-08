@@ -5,6 +5,7 @@ import Header from '@/components/layout/Header';
 import Button from '@/components/ui/Button';
 import Chip from '@/components/ui/Chip';
 import TextField from '@/components/ui/TextField';
+import ConfirmationModal from '@/components/ui/ConfirmationModal';
 import ServiceTable from '@/components/ServiceTable';
 import type { Service, Specialist } from '@/types/service';
 import {
@@ -16,7 +17,10 @@ import {
 import { Pagination, Tab, Tabs } from '@mui/material';
 import { useState } from 'react';
 import Link from 'next/link';
-import { useGetAllSpecialistsQuery } from '@/redux/features/specialists/specialists.api';
+import {
+  useGetAllSpecialistsQuery,
+  useDeleteSpecialistMutation,
+} from '@/redux/features/specialists/specialists.api';
 import { useDebounce } from '@/lib/hooks';
 
 export default function SpecialistsPage() {
@@ -26,9 +30,18 @@ export default function SpecialistsPage() {
   const [page, setPage] = useState(1);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [menuServiceId, setMenuServiceId] = useState<string | null>(null);
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [specialistToDelete, setSpecialistToDelete] = useState<{
+    id: string;
+    title: string;
+  } | null>(null);
 
   // Debounce search query to reduce API calls
   const debouncedSearchQuery = useDebounce(searchQuery, 500);
+
+  // Delete specialist mutation
+  const [deleteSpecialist, { isLoading: isDeleting }] =
+    useDeleteSpecialistMutation();
 
   // Determine is_draft filter based on selected tab
   const getDraftFilter = () => {
@@ -106,6 +119,39 @@ export default function SpecialistsPage() {
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchQuery(e.target.value);
     setPage(1); // Reset to first page when searching
+  };
+
+  // Handle delete specialist - opens confirmation modal
+  const handleDelete = (id: string) => {
+    const specialist = specialists.find((s: Specialist) => s.id === id);
+    if (specialist) {
+      setSpecialistToDelete({ id: specialist.id, title: specialist.title });
+      setDeleteModalOpen(true);
+    }
+  };
+
+  // Handle confirmed delete
+  const handleConfirmDelete = async () => {
+    if (!specialistToDelete) return;
+
+    try {
+      await deleteSpecialist(specialistToDelete.id).unwrap();
+      // Remove from selected services if it was selected
+      setSelectedServices((prev) =>
+        prev.filter((sid) => sid !== specialistToDelete.id)
+      );
+      setDeleteModalOpen(false);
+      setSpecialistToDelete(null);
+    } catch (error) {
+      console.error('Failed to delete specialist:', error);
+      alert('Failed to delete specialist. Please try again.');
+    }
+  };
+
+  // Handle cancel delete
+  const handleCancelDelete = () => {
+    setDeleteModalOpen(false);
+    setSpecialistToDelete(null);
   };
 
   if (isError) {
@@ -254,6 +300,7 @@ export default function SpecialistsPage() {
               menuServiceId={menuServiceId}
               onMenuOpen={handleMenuOpen}
               onMenuClose={handleMenuClose}
+              onDelete={handleDelete}
             />
 
             {/* Pagination */}
@@ -303,6 +350,18 @@ export default function SpecialistsPage() {
             </div>
           </>
         )}
+
+        {/* Delete Confirmation Modal */}
+        <ConfirmationModal
+          open={deleteModalOpen}
+          title="Delete Specialist"
+          message={`Are you sure you want to delete "${specialistToDelete?.title}"? This action cannot be undone.`}
+          confirmText="Delete"
+          cancelText="Cancel"
+          onConfirm={handleConfirmDelete}
+          onCancel={handleCancelDelete}
+          isLoading={isDeleting}
+        />
       </div>
     </div>
   );

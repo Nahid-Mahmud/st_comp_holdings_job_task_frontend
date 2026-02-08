@@ -28,6 +28,7 @@ interface ServiceTableProps {
   menuServiceId: string | null;
   onMenuOpen: (event: React.MouseEvent<HTMLElement>, id: string) => void;
   onMenuClose: () => void;
+  onDelete: (id: string) => void;
 }
 
 export default function ServiceTable({
@@ -39,6 +40,7 @@ export default function ServiceTable({
   menuServiceId,
   onMenuOpen,
   onMenuClose,
+  onDelete,
 }: ServiceTableProps) {
   const router = useRouter();
   return (
@@ -268,7 +270,7 @@ export default function ServiceTable({
                     <button
                       className="flex items-center w-full px-4 py-2 text-sm text-red-600 hover:bg-gray-100"
                       onClick={() => {
-                        // handle delete
+                        onDelete(service.id);
                         onMenuClose();
                       }}
                     >
