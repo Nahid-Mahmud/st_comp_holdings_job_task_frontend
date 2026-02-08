@@ -5,7 +5,9 @@ import { useGetMeQuery } from '@/redux/features/users/users.api';
 import {
   useLoginMutation,
   useRegisterMutation,
+  useLogoutMutation,
 } from '@/redux/features/auth/auth.api';
+import { deleteCookies } from '@/service/DeleteCookies';
 import React, {
   createContext,
   useContext,
@@ -28,6 +30,7 @@ interface AuthContextType {
   isLoading: boolean;
   isLoginLoading: boolean;
   isRegisterLoading: boolean;
+  isLogoutLoading: boolean;
   error: any;
   refetch: () => void;
   login: (
@@ -38,6 +41,7 @@ interface AuthContextType {
     email: string,
     password: string
   ) => Promise<{ success: boolean; message?: string; error?: string }>;
+  logout: () => Promise<{ success: boolean; message?: string; error?: string }>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -49,11 +53,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     error,
     refetch,
     isError,
-  } = useGetMeQuery(undefined);
+  } = useGetMeQuery(undefined, {
+    // Don't refetch on mount or window focus after logout
+    refetchOnMountOrArgChange: false,
+  });
   const [loginMutation] = useLoginMutation();
   const [registerMutation] = useRegisterMutation();
+  const [logoutMutation] = useLogoutMutation();
   const [isLoginLoading, setIsLoginLoading] = useState(false);
   const [isRegisterLoading, setIsRegisterLoading] = useState(false);
+  const [isLogoutLoading, setIsLogoutLoading] = useState(false);
 
   const login = useCallback(
     async (email: string, password: string) => {
@@ -98,6 +107,28 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     [registerMutation]
   );
 
+  const logout = useCallback(async () => {
+    setIsLogoutLoading(true);
+    try {
+      await logoutMutation({}).unwrap();
+      // Clear cookies and local storage
+      deleteCookies(['accessToken', 'refreshToken']);
+      localStorage.removeItem('accessToken');
+      setIsLogoutLoading(false);
+      // The invalidatesTags in the mutation will clear the cache
+      // which will make isAuthenticated false
+      return { success: true, message: 'Logged out successfully' };
+    } catch (error: any) {
+      setIsLogoutLoading(false);
+      // Even if API fails, clear local state
+      deleteCookies(['accessToken', 'refreshToken']);
+      localStorage.removeItem('accessToken');
+      const errorMessage =
+        error?.data?.message || error?.message || 'Logout failed';
+      return { success: false, error: errorMessage };
+    }
+  }, [logoutMutation]);
+
   const value: AuthContextType = {
     user: user?.data || null,
     isAuthenticated: !!user?.data,
@@ -105,10 +136,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     isLoading: isLoading && !isError,
     isLoginLoading,
     isRegisterLoading,
+    isLogoutLoading,
     error,
     refetch,
     login,
     register,
+    logout,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

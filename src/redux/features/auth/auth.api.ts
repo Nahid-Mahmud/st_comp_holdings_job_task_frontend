@@ -65,7 +65,16 @@ export const authApi = baseApi.injectEndpoints({
         url: '/auth/logout',
         method: 'POST',
       }),
-      // invalidatesTags: tagTypes,
+      async onQueryStarted(arg, { dispatch, queryFulfilled }) {
+        try {
+          await queryFulfilled;
+          // Reset entire API state to clear all cached data
+          dispatch(baseApi.util.resetApiState());
+        } catch (error) {
+          // Even if logout fails, clear all cache
+          dispatch(baseApi.util.resetApiState());
+        }
+      },
     }),
 
     contactUs: builder.mutation({
