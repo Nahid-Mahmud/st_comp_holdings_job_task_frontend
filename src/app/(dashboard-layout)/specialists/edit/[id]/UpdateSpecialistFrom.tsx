@@ -16,7 +16,7 @@ import { CheckCircle } from '@mui/icons-material';
 import { Avatar, CircularProgress } from '@mui/material';
 import Image from 'next/image';
 import { useParams, useRouter } from 'next/navigation';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import UpdateServiceDrawer from './UpdateServiceDrawer';
 
@@ -32,6 +32,8 @@ export default function UpdateSpecialistForm() {
     useGetSpecialistByIdQuery(specialistId, {
       skip: !specialistId,
     });
+
+  console.log('specialists Data ', specialistData);
 
   // Form state
   const [formData, setFormData] = useState({
@@ -55,58 +57,75 @@ export default function UpdateSpecialistForm() {
     useUpdateSpecialistMutation();
 
   const router = useRouter();
-  const isInitializedRef = useRef(false);
 
   // Populate form with existing specialist data
   useEffect(() => {
-    if (specialistData?.data && !isInitializedRef.current) {
+    if (specialistData?.data) {
       const specialist = specialistData.data;
-      isInitializedRef.current = true;
 
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setFormData({
-        title: specialist.title || '',
-        description: specialist.description || '',
-        base_price: Number(specialist.base_price) || 0,
-        duration_days: specialist.duration_days || 0,
+        title: specialist?.title || '',
+        description: specialist?.description || '',
+        base_price: Number(specialist?.base_price) || 0,
+        duration_days: specialist?.duration_days || 0,
       });
       // eslint-disable-next-line react-hooks/set-state-in-effect
-      setServiceId(specialist.id);
+      setServiceId(specialist?.id);
 
       // Set selected offerings
       if (
-        specialist.service_offerings &&
-        specialist.service_offerings.length > 0
+        specialist?.service_offerings &&
+        specialist?.service_offerings?.length > 0
       ) {
         const offeringIds = specialist.service_offerings.map(
-          (offering: any) => offering.service_offerings_master_list_id
+          (offering: any) => offering?.service_offerings_master_list_id
         );
         // eslint-disable-next-line react-hooks/set-state-in-effect
         setSelectedOfferings(offeringIds);
+      } else {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        setSelectedOfferings([]);
       }
 
       // Set existing photos from media array based on display_order
-      if (specialist.media && specialist.media.length > 0) {
+      if (specialist?.media && specialist?.media?.length > 0) {
         const sortedMedia = [...specialist.media].sort(
-          (a: any, b: any) => a.display_order - b.display_order
+          (a: any, b: any) => (a?.display_order ?? 0) - (b?.display_order ?? 0)
         );
+
+        // Reset images first
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        setImage1(null);
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        setImage2(null);
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        setImage3(null);
 
         sortedMedia.forEach((mediaItem: any) => {
           // eslint-disable-next-line react-hooks/set-state-in-effect
-          if (mediaItem.display_order === 0) setImage1(mediaItem.file_name);
+          if (mediaItem?.display_order === 0) setImage1(mediaItem?.file_name);
           // eslint-disable-next-line react-hooks/set-state-in-effect
-          if (mediaItem.display_order === 1) setImage2(mediaItem.file_name);
+          if (mediaItem?.display_order === 1) setImage2(mediaItem?.file_name);
           // eslint-disable-next-line react-hooks/set-state-in-effect
-          if (mediaItem.display_order === 2) setImage3(mediaItem.file_name);
+          if (mediaItem?.display_order === 2) setImage3(mediaItem?.file_name);
         });
 
-        const photoUrls = sortedMedia.map((media: any) => media.file_name);
+        const photoUrls = sortedMedia.map((media: any) => media?.file_name);
         // eslint-disable-next-line react-hooks/set-state-in-effect
         setExistingPhotos(photoUrls);
+      } else {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        setImage1(null);
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        setImage2(null);
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        setImage3(null);
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        setExistingPhotos([]);
       }
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [specialistData]);
 
   // Create a map of offering IDs to titles for display
   const offeringsMap = useMemo(() => {
@@ -114,12 +133,12 @@ export default function UpdateSpecialistForm() {
     return new Map(
       serviceOfferingsResponse.data.map(
         (offering: { id: string; title: string }) => [
-          offering.id,
-          offering.title,
+          offering?.id,
+          offering?.title,
         ]
       )
     );
-  }, [serviceOfferingsResponse.data]);
+  }, [serviceOfferingsResponse]);
 
   const toggleSidePanel = () => {
     setSidePanel(!sidePanel);
@@ -187,7 +206,7 @@ export default function UpdateSpecialistForm() {
       <div className="rounded-lg  grid grid-cols-3 gap-6">
         {/* Service Images */}
         <div className="col-span-2 font-red-hat-display text-2xl font-semibold text-gray-900 mb-4">
-          {formData.title ||
+          {formData?.title ||
             'Register a new company | Private Limited - Sdn Bhd'}
         </div>
         <div className="grid grid-cols-2 gap-4 mb-6 col-span-2 ">
@@ -313,7 +332,7 @@ export default function UpdateSpecialistForm() {
               <div className="inline-block border-b-2 border-gray-900 pb-2">
                 <span className="text-4xl font-semibold font-red-hat-display text-gray-900">
                   RM{' '}
-                  {formData.base_price.toLocaleString('en-MY', {
+                  {formData?.base_price?.toLocaleString('en-MY', {
                     minimumFractionDigits: 2,
                     maximumFractionDigits: 2,
                   })}
@@ -327,7 +346,7 @@ export default function UpdateSpecialistForm() {
                 <span className="text-gray-600">Base price</span>
                 <span className="text-gray-900 font-medium">
                   RM{' '}
-                  {formData.base_price.toLocaleString('en-MY', {
+                  {formData?.base_price?.toLocaleString('en-MY', {
                     minimumFractionDigits: 2,
                     maximumFractionDigits: 2,
                   })}
@@ -337,20 +356,26 @@ export default function UpdateSpecialistForm() {
                 <span className="text-gray-600">Service processing fee</span>
                 <span className="text-gray-900 font-medium">
                   RM{' '}
-                  {(formData.base_price * 0.3).toLocaleString('en-MY', {
-                    minimumFractionDigits: 2,
-                    maximumFractionDigits: 2,
-                  })}
+                  {((formData?.base_price ?? 0) * 0.3)?.toLocaleString(
+                    'en-MY',
+                    {
+                      minimumFractionDigits: 2,
+                      maximumFractionDigits: 2,
+                    }
+                  )}
                 </span>
               </div>
               <div className="flex justify-between text-sm border-b pb-3">
                 <span className="text-gray-900 font-medium">Total</span>
                 <span className="text-gray-900 font-medium">
                   RM{' '}
-                  {(formData.base_price * 1.3).toLocaleString('en-MY', {
-                    minimumFractionDigits: 2,
-                    maximumFractionDigits: 2,
-                  })}
+                  {((formData?.base_price ?? 0) * 1.3)?.toLocaleString(
+                    'en-MY',
+                    {
+                      minimumFractionDigits: 2,
+                      maximumFractionDigits: 2,
+                    }
+                  )}
                 </span>
               </div>
               <div className="flex justify-between text-sm pt-2">
@@ -359,7 +384,7 @@ export default function UpdateSpecialistForm() {
                 </span>
                 <span className="text-gray-900 font-semibold">
                   RM{' '}
-                  {formData.base_price.toLocaleString('en-MY', {
+                  {formData?.base_price?.toLocaleString('en-MY', {
                     minimumFractionDigits: 2,
                     maximumFractionDigits: 2,
                   })}
@@ -375,9 +400,9 @@ export default function UpdateSpecialistForm() {
         <h2 className="text-2xl font-semibold text-gray-900 mb-2">
           Description
         </h2>
-        {formData.description ? (
+        {formData?.description ? (
           <p className="text-gray-700 text-base leading-relaxed mb-4">
-            {formData.description}
+            {formData?.description}
           </p>
         ) : (
           <p className="text-gray-500 text-sm mb-4">
@@ -392,13 +417,13 @@ export default function UpdateSpecialistForm() {
         <h2 className="text-2xl font-semibold text-gray-900 mb-2">
           Additional Offerings
         </h2>
-        {selectedOfferings.length > 0 ? (
+        {selectedOfferings?.length > 0 ? (
           <div className="space-y-2 mb-4">
-            {selectedOfferings.map((offeringId, index) => (
+            {selectedOfferings?.map((offeringId, index) => (
               <div key={index} className="flex items-center gap-2">
                 <CheckCircle sx={{ width: 20, height: 20, color: '#10b981' }} />
                 <span className="text-gray-700 text-base">
-                  {offeringsMap.get(offeringId) || offeringId}
+                  {offeringsMap?.get(offeringId) || offeringId}
                 </span>
               </div>
             ))}
