@@ -105,7 +105,8 @@ export default function UpdateSpecialistForm() {
         setExistingPhotos(photoUrls);
       }
     }
-  }, [specialistData]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Create a map of offering IDs to titles for display
   const offeringsMap = useMemo(() => {

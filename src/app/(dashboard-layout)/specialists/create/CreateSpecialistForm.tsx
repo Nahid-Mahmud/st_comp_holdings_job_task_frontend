@@ -69,14 +69,14 @@ export default function CreateSpecialistForm() {
   const offeringsMap = useMemo(() => {
     if (!serviceOfferingsResponse?.data) return new Map();
     return new Map(
-      serviceOfferingsResponse.data.map(
+      serviceOfferingsResponse?.data?.map(
         (offering: { id: string; title: string }) => [
-          offering.id,
-          offering.title,
+          offering?.id,
+          offering?.title,
         ]
       )
     );
-  }, [serviceOfferingsResponse.data]);
+  }, [serviceOfferingsResponse?.data]);
 
   // Helper function to format file size
   const formatFileSize = (bytes: number) => {
@@ -111,7 +111,7 @@ export default function CreateSpecialistForm() {
     else if (order === 2) setDragActive2(false);
     else if (order === 3) setDragActive3(false);
 
-    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+    if (e.dataTransfer?.files?.[0]) {
       handleFiles(e.dataTransfer.files[0], order);
     }
   };
@@ -129,7 +129,7 @@ export default function CreateSpecialistForm() {
     order: number
   ) => {
     e.preventDefault();
-    if (e.target.files && e.target.files[0]) {
+    if (e.target?.files?.[0]) {
       handleFiles(e.target.files[0], order);
     }
   };
@@ -179,19 +179,19 @@ export default function CreateSpecialistForm() {
       setFileName1('');
       setFileSize1(0);
       setFileObj1(null);
-      if (inputRef1.current) inputRef1.current.value = '';
+      if (inputRef1?.current) inputRef1.current.value = '';
     } else if (order === 2) {
       setUploadedImage2(null);
       setFileName2('');
       setFileSize2(0);
       setFileObj2(null);
-      if (inputRef2.current) inputRef2.current.value = '';
+      if (inputRef2?.current) inputRef2.current.value = '';
     } else if (order === 3) {
       setUploadedImage3(null);
       setFileName3('');
       setFileSize3(0);
       setFileObj3(null);
-      if (inputRef3.current) inputRef3.current.value = '';
+      if (inputRef3?.current) inputRef3.current.value = '';
     }
   };
 
@@ -212,9 +212,9 @@ export default function CreateSpecialistForm() {
         photos,
       }).unwrap();
 
-      setServiceId(res.data.id);
+      setServiceId(res?.data?.id);
       toast.success('Specialist service created successfully!');
-      console.log(res.data.id);
+      console.log(res?.data?.id);
     } catch (err) {
       console.error('Error creating specialist:', err);
       toast.error('Failed to create specialist. Please try again.');

@@ -124,7 +124,8 @@ export default function UpdateServiceDrawer({
       setErrors({}); // Clear errors when drawer opens
     }
     prevOpenRef.current = open;
-  }, [open, additionalOfferingOptions, formData, selectedOfferings]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open]);
 
   const handleSave = async () => {
     // Clear previous errors
