@@ -18,9 +18,11 @@ import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useRef, useState, useMemo } from 'react';
 import { toast } from 'sonner';
+import PublishConfirmationModal from '../edit/[id]/PublishConfirmationModal';
 
 export default function CreateSpecialistForm() {
   const [sidePanel, setSidePanel] = useState(false);
+  const [showPublishModal, setShowPublishModal] = useState(false);
   const [createSpecialist, { isLoading, error }] =
     useCreateSpecialistMutation();
   const { data: serviceOfferingsResponse } =
@@ -222,16 +224,20 @@ export default function CreateSpecialistForm() {
     }
   };
 
-  // Handle form submission
-  const handlePublish = async () => {
-    // Validate required fields
+  // Handle opening the publish confirmation modal
+  const handlePublish = () => {
+    if (!serviceId) {
+      toast.error('Please save the specialist service first.');
+      // open side panel to prompt user to save
+      setSidePanel(true);
+      return;
+    }
+    setShowPublishModal(true);
+  };
+
+  // Handle confirmed publish action
+  const handleConfirmPublish = async () => {
     try {
-      if (!serviceId) {
-        toast.error('Please save the specialist service first.');
-        // open side panel to prompt user to save
-        setSidePanel(true);
-        return;
-      }
       const res = await updateSpecialistFn({
         id: serviceId,
         data: {
@@ -239,10 +245,12 @@ export default function CreateSpecialistForm() {
         },
       }).unwrap();
       toast.success('Specialist service published successfully!');
+      setShowPublishModal(false);
       router.push('/all-services');
     } catch (err) {
       console.error('Error publishing specialist:', err);
       toast.error('Failed to publish specialist. Please try again.');
+      setShowPublishModal(false);
     }
   };
 
@@ -424,11 +432,7 @@ export default function CreateSpecialistForm() {
               onClick={handlePublish}
               disabled={isPublishLoading}
             >
-              {isPublishLoading ? (
-                <CircularProgress size={20} color="inherit" />
-              ) : (
-                'Publish'
-              )}
+              Publish
             </Button>
           </div>
           {/* card */}
@@ -783,6 +787,14 @@ export default function CreateSpecialistForm() {
         ]}
         onSave={handleAddSpecialist}
         isLoading={isLoading}
+      />
+
+      {/* Publish Confirmation Modal */}
+      <PublishConfirmationModal
+        open={showPublishModal}
+        onClose={() => setShowPublishModal(false)}
+        onConfirm={handleConfirmPublish}
+        isLoading={isPublishLoading}
       />
     </div>
   );

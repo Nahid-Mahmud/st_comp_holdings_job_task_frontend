@@ -12,12 +12,13 @@ import {
   useGetSpecialistByIdQuery,
   useUpdateSpecialistMutation,
 } from '@/redux/features/specialists/specialists.api';
-import { CheckCircle } from '@mui/icons-material';
+import { CheckCircle, Error } from '@mui/icons-material';
 import { Avatar, CircularProgress } from '@mui/material';
 import Image from 'next/image';
 import { useParams, useRouter } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
+import PublishConfirmationModal from './PublishConfirmationModal';
 import UpdateServiceDrawer from './UpdateServiceDrawer';
 
 export default function UpdateSpecialistForm() {
@@ -25,6 +26,7 @@ export default function UpdateSpecialistForm() {
   const specialistId = params?.id as string;
 
   const [sidePanel, setSidePanel] = useState(false);
+  const [showPublishModal, setShowPublishModal] = useState(false);
   const { data: serviceOfferingsResponse } =
     useGetAllServiceOfferingMasterListsQuery(undefined);
 
@@ -166,9 +168,13 @@ export default function UpdateSpecialistForm() {
     }
   };
 
-  // Handle form submission
-  const handlePublish = async () => {
-    // Validate required fields
+  // Handle opening the publish confirmation modal
+  const handlePublish = () => {
+    setShowPublishModal(true);
+  };
+
+  // Handle confirmed publish action
+  const handleConfirmPublish = async () => {
     try {
       await updateSpecialistFn({
         id: specialistId,
@@ -177,10 +183,12 @@ export default function UpdateSpecialistForm() {
         },
       }).unwrap();
       toast.success('Specialist service published successfully!');
+      setShowPublishModal(false);
       router.push('/all-services');
     } catch (err) {
       console.error('Error publishing specialist:', err);
       toast.error('Failed to publish specialist. Please try again.');
+      setShowPublishModal(false);
     }
   };
 
@@ -308,11 +316,7 @@ export default function UpdateSpecialistForm() {
               onClick={handlePublish}
               disabled={isPublishLoading}
             >
-              {isPublishLoading ? (
-                <CircularProgress size={20} color="inherit" />
-              ) : (
-                'Publish'
-              )}
+              Publish
             </Button>
           </div>
           {/* card */}
@@ -394,7 +398,6 @@ export default function UpdateSpecialistForm() {
           </div>
         </div>
       </div>
-
       {/* Description Section */}
       <div className="mt-12 mb-8">
         <h2 className="text-2xl font-semibold text-gray-900 mb-2">
@@ -411,7 +414,6 @@ export default function UpdateSpecialistForm() {
         )}
         <div className="border-b border-gray-200"></div>
       </div>
-
       {/* Additional Offerings Section */}
       <div className="mt-8 mb-8">
         <h2 className="text-2xl font-semibold text-gray-900 mb-2">
@@ -435,7 +437,6 @@ export default function UpdateSpecialistForm() {
         )}
         <div className="border-b border-gray-200"></div>
       </div>
-
       {/* Company Secretary Section */}
       <div className="mt-8 mb-12">
         <h2 className="text-2xl font-semibold text-gray-900 mb-8">
@@ -529,7 +530,6 @@ export default function UpdateSpecialistForm() {
           </div>
         </div>
       </div>
-
       {/* Side Panel */}
       <UpdateServiceDrawer
         open={sidePanel}
@@ -539,6 +539,14 @@ export default function UpdateSpecialistForm() {
         selectedOfferings={selectedOfferings}
         onOfferingsChange={setSelectedOfferings}
         onSave={handleUpdateSpecialist}
+        isLoading={isPublishLoading}
+      />
+
+      {/* Publish Confirmation Modal */}
+      <PublishConfirmationModal
+        open={showPublishModal}
+        onClose={() => setShowPublishModal(false)}
+        onConfirm={handleConfirmPublish}
         isLoading={isPublishLoading}
       />
     </div>
